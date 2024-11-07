@@ -260,6 +260,11 @@ void AGameOffDevCharacter::EndPushOrPull()
 {
 	bIsPushingOrPulling = false;
 	TargetBox = nullptr;
+
+	if (CurrentLampeTorche)
+	{
+		CurrentLampeTorche->LampSpotLight->SetVisibility(true);
+	}
 }
 
 bool AGameOffDevCharacter::CheckForPushableBox()
@@ -307,6 +312,10 @@ void AGameOffDevCharacter::BeginPushOrPull()
 		if (TargetBox != nullptr)
 		{
 			bIsPushingOrPulling = true;
+			if (CurrentLampeTorche)
+			{
+				CurrentLampeTorche->LampSpotLight->SetVisibility(false);
+			}
 		}
 	}
 	else
