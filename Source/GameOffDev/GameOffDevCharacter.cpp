@@ -17,19 +17,12 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter)
 AGameOffDevCharacter::AGameOffDevCharacter()
 {
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
-	// Don't rotate when the controller rotates. Let that just affect the camera.
 	PrimaryActorTick.bCanEverTick = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
-
-	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = false; // Character moves in the direction of input...	
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
-
-	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
-	// instead of recompiling to adjust them
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
@@ -135,50 +128,18 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 
 
 
-void AGameOffDevCharacter::TraceForward()
-{
-    FVector Start = GetActorLocation();
-
-    FVector ForwardVector = GetActorForwardVector();
-	FRotator NewRotation = FRotator(0.f, 90.f, 0.f);
-	ForwardVector = NewRotation.RotateVector(ForwardVector);
-
-    FVector End = Start + ForwardVector * 50.0f;
-
-    FHitResult HitResult;
-    FCollisionQueryParams CollisionParams;
-    CollisionParams.AddIgnoredActor(this);
-
-    bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, CollisionParams);
-
-    FVector ImpactLocation = HitResult.Location;
-
-    if (bHit)
-    {
-        DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, -1.0f, 0, 1.0f);
-    }
-    else
-    {
-        DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, -1.0f, 0, 1.0f);
-    }
-}
-
-
-
 void AGameOffDevCharacter::FaceMouseCursor()
 {
 	FVector TargetLocation = GetMouseWorldLocation();
 
 	if (TargetLocation != FVector::ZeroVector)
 	{
-		// Calcul de la direction vers la souris
 		FVector Direction = (TargetLocation - GetActorLocation()).GetSafeNormal();
 		FRotator NewRotation = Direction.Rotation();
-		NewRotation.Pitch = 0.0f; // Conserver seulement la rotation sur l'axe Yaw
+		NewRotation.Pitch = 0.0f;
 		NewRotation.Roll = 0.0f;
 		NewRotation.Yaw -=90.0f;
 
-		// Applique la rotation à l'ensemble du personnage, y compris la capsule et le mesh
 		SetActorRotation(NewRotation);
 	}
 	if (CurrentLampeTorche)
@@ -192,24 +153,18 @@ void AGameOffDevCharacter::FaceMouseCursor()
 void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FaceMouseCursor(); // Met à jour la rotation du personnage
-	TraceForward();
+	FaceMouseCursor();
 	TraceToMouseCursor();
 	CheckForLampeTorche();
 }
 
 void AGameOffDevCharacter::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Input
-
 void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -218,27 +173,19 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		}
 	}
 	
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
-		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
-		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
-
-		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
-	}
-	else
-	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
+		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
 	}
 }
+
+
 void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -247,27 +194,134 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 		if (PlayerController)
 		{
 			FVector CameraDirection = PlayerController->PlayerCameraManager->GetActorForwardVector();
+			CameraDirection.Z = 0;
+			CameraDirection.Normalize();
 
-			FVector ForwardDirection = CameraDirection;
-			FVector RightDirection = FVector::CrossProduct(FVector::UpVector, CameraDirection); 
-			ForwardDirection.Normalize();
-			RightDirection.Normalize();
+			FVector ForwardDirection, RightDirection;
+			float Angle = FMath::Atan2(CameraDirection.Y, CameraDirection.X);
 
-			AddMovementInput(RightDirection, MovementVector.Y);
-			AddMovementInput(ForwardDirection, -MovementVector.X);
+			if (Angle >= -PI / 4 && Angle < PI / 4)
+			{
+				ForwardDirection = FVector(1, 0, 0);
+				RightDirection = FVector(0, 1, 0);
+			}
+			else if (Angle >= PI / 4 && Angle < 3 * PI / 4)
+			{
+				ForwardDirection = FVector(0, 1, 0);
+				RightDirection = FVector(-1, 0, 0);
+			}
+			else if (Angle >= -3 * PI / 4 && Angle < -PI / 4)
+			{
+				ForwardDirection = FVector(0, -1, 0);
+				RightDirection = FVector(1, 0, 0);
+			}
+			else
+			{
+				ForwardDirection = FVector(-1, 0, 0);
+				RightDirection = FVector(0, -1, 0);
+			}
+			if (TargetBox == nullptr)
+			{
+				AddMovementInput(ForwardDirection, -MovementVector.X);
+				AddMovementInput(RightDirection, MovementVector.Y);
+
+			}
+			if (bIsPushingOrPulling && TargetBox != nullptr && (MovementVector.Size() > 0) && CheckForPushableBox())
+			{
+				AddMovementInput(ForwardDirection, -MovementVector.X / 8);
+				AddMovementInput(RightDirection, MovementVector.Y / 8);
+				FVector PushDirection;
+
+				if (MovementVector.X > 0)
+				{
+					PushDirection = -ForwardDirection;
+				}
+				else if (MovementVector.X < 0)
+				{
+					PushDirection = ForwardDirection;
+				}
+				else if (MovementVector.Y > 0)
+				{
+					PushDirection = RightDirection;
+				}
+				else if (MovementVector.Y < 0)
+				{
+					PushDirection = -RightDirection;
+				}
+
+				FVector NewLocation = TargetBox->GetActorLocation() + (PushDirection); // Ajustez la vitesse ici
+				TargetBox->SetActorLocation(NewLocation);
+			}
 		}
+	}
+}
+
+void AGameOffDevCharacter::EndPushOrPull()
+{
+	bIsPushingOrPulling = false;
+	TargetBox = nullptr;
+}
+
+bool AGameOffDevCharacter::CheckForPushableBox()
+{
+	FVector Start = GetActorLocation();
+
+	FVector ForwardVector = GetActorForwardVector();
+	FRotator NewRotation = FRotator(0.f, 90.f, 0.f);
+	ForwardVector = NewRotation.RotateVector(ForwardVector);
+	FVector End = Start + ForwardVector * 50.0f;
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+
+	if (bHit)
+	{
+		APoussableBox* DetectedBox = Cast<APoussableBox>(HitResult.GetActor());
+		if (DetectedBox)
+			return true;
+	}
+	return false;
+}
+void AGameOffDevCharacter::BeginPushOrPull()
+{
+	FVector Start = GetActorLocation();
+
+	FVector ForwardVector = GetActorForwardVector();
+	FRotator NewRotation = FRotator(0.f, 90.f, 0.f);
+	ForwardVector = NewRotation.RotateVector(ForwardVector);
+
+	FVector End = Start + ForwardVector * 50.0f;
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+
+	if (bHit)
+	{
+		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
+		TargetBox = Cast<APoussableBox>(HitResult.GetActor());
+		if (TargetBox != nullptr)
+		{
+			bIsPushingOrPulling = true;
+		}
+	}
+	else
+	{
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 	}
 }
 
 
 void AGameOffDevCharacter::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}

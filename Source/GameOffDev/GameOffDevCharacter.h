@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "LampeTorche.h"
+#include "PoussableBox.h"
 #include "GameOffDevCharacter.generated.h"
 
 class USpringArmComponent;
@@ -37,6 +38,9 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* PushOrPullAction;
+
 public:
 	AGameOffDevCharacter();
 
@@ -45,6 +49,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LampeTorche")
 	ALampeTorche* CurrentLampeTorche;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PoussableBox")
+	APoussableBox* TargetBox;
+
+	bool bIsPushingOrPulling = false;
 protected:
 
 
@@ -57,14 +65,18 @@ protected:
 	FVector GetMouseWorldLocation() const;
 
 	void FaceMouseCursor();
-			
-	void TraceForward();
 
 	void TraceToMouseCursor();
 
 	void CheckForLampeTorche();
 
 	void PickupLampeTorche(ALampeTorche* LampeTorche);
+	
+	void BeginPushOrPull();
+
+	void EndPushOrPull();
+
+	bool CheckForPushableBox();
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
