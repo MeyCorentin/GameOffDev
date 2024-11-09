@@ -16,28 +16,45 @@ ALampeTorche::ALampeTorche()
 
     // Créer un spot light pour la lampe torche
     LampSpotLight = CreateDefaultSubobject<USpotLightComponent>(TEXT("LampSpotLight"));
-    LampSpotLight->SetupAttachment(LampMesh);  // Attache le spot light au mesh de la lampe
+    LampSpotLight->SetupAttachment(LampMesh);
 
-    // Réglages du spot light (par exemple, augmenter la portée et l'intensité)
     LampSpotLight->SetIntensity(100000.f);
     LampSpotLight->SetLightColor(FLinearColor::White);
     LampSpotLight->SetAttenuationRadius(5000.f);
 }
 
-// Called when the game starts or when spawned
 void ALampeTorche::BeginPlay()
 {
     Super::BeginPlay();
+
+    FTimerDelegate TimerDelegate;
+    TimerDelegate.BindUFunction(this, FName("UpdateBattery"));
+
+
+    if (GEngine)
+    {
+        UWorld* World = GEngine->GetWorldFromContextObjectChecked(this);
+        if (World)
+        {
+            World->GetTimerManager().SetTimer(
+                BatteryTimerHandle,
+                TimerDelegate,
+                1.0f,
+                true
+            );
+            UE_LOG(LogTemp, Warning, TEXT("Timer !"));
+        }
+    }
+    InitBatteryLevel = BatteryLevel;
+    InitialIntensity = LampSpotLight->Intensity;
+    InitialAttenuationRadius = LampSpotLight->AttenuationRadius;
 }
 
-// Called every frame
 void ALampeTorche::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 }
 
-
-// Fonction pour changer la couleur de la lampe torche
 void ALampeTorche::ChangeColor(int32 ColorCode)
 {
     switch (ColorCode)
@@ -57,12 +74,27 @@ void ALampeTorche::ChangeColor(int32 ColorCode)
     }
 }
 
-// Attacher la lampe torche à la main du joueur
 void ALampeTorche::AttachToPlayer(USkeletalMeshComponent* PlayerMesh)
 {
     if (PlayerMesh)
     {
-        // Attacher la lampe torche à la main du joueur (socket "HandSocket")
         AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, "HandSocket");
+    }
+}
+
+void ALampeTorche::UpdateBattery()
+{
+    if (BatteryLevel > 0.f && InitBatteryLevel > 0.f)
+    {
+        float BatteryDrainAmount = (BatteryDrainRate / 100.f) * InitBatteryLevel;
+        BatteryLevel = FMath::Max(BatteryLevel - BatteryDrainAmount, 0.f);
+        float BatteryProportion = BatteryLevel / InitBatteryLevel;
+        LampSpotLight->SetAttenuationRadius(InitialAttenuationRadius * BatteryProportion);
+        LampSpotLight->SetIntensity(InitialIntensity * BatteryProportion);
+
+        if (BatteryLevel <= 0.f)
+        {
+            LampSpotLight->SetIntensity(0.f);
+        }
     }
 }

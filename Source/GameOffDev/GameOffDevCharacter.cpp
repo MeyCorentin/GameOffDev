@@ -147,9 +147,9 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	FaceMouseCursor();
-	TraceToMouseCursor();
+	//TraceToMouseCursor();
 	CheckForLampeTorche();
-	DrawDetectionConeToMouse();
+	//DrawDetectionConeToMouse();
 }
 
 void AGameOffDevCharacter::BeginPlay()
@@ -389,9 +389,9 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 	{
 		if (HighlightableObject->RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
-				static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
-				static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
+			//UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
+			//static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
+			//static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
 			return false;
 		}
 
