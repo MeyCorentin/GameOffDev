@@ -13,33 +13,62 @@ AHighlightableObject::AHighlightableObject()
     // Create the mesh component
     MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
     RootComponent = MeshComponent;
+    isDisplay = false;
 }
 
 bool AHighlightableObject::IsIlluminatedByFlashlight(ALampeTorche* Flashlight)
 {
     AGameOffDevCharacter* Character = Cast<AGameOffDevCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
-    return Character->IsActorInDetectionCone(this);
+    bool isActorDetected = Character->IsActorInDetectionCone(this);
+    return isActorDetected;
 }
 
 
-void AHighlightableObject::Tick(float DeltaTime)
+bool AHighlightableObject::getDisplayStatus()
 {
-    Super::Tick(DeltaTime);
+    return isDisplay;
+}
 
-    // Trouver la première instance de lampe torche dans le monde
+
+void AHighlightableObject::HandleObjectStatus()
+{
     ALampeTorche* Flashlight = nullptr;
     for (TActorIterator<ALampeTorche> It(GetWorld()); It; ++It)
     {
         Flashlight = *It;
-        break; // Sortir après avoir trouvé la première lampe torche
+        break;
     }
 
     if (Flashlight && IsIlluminatedByFlashlight(Flashlight))
     {
-        MeshComponent->SetVisibility(true);
+        this->DisplayObject();
     }
     else
     {
-        MeshComponent->SetVisibility(false);
+        this->HideObject();
     }
+
+}
+
+
+void AHighlightableObject::DisplayObject()
+{
+    MeshComponent->SetVisibility(true);
+    MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    isDisplay = true;
+
+}
+
+void AHighlightableObject::HideObject()
+{
+    MeshComponent->SetVisibility(false);
+    MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    isDisplay = false;
+
+}
+
+void AHighlightableObject::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    HandleObjectStatus();
 }

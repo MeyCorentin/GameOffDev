@@ -34,28 +34,18 @@ AGameOffDevCharacter::AGameOffDevCharacter()
 
 void AGameOffDevCharacter::TraceToMouseCursor()
 {
-	FVector TargetLocation = GetMouseWorldLocation();
+	FVector TargetLocation, Direction, Start, End;
 
+	TargetLocation = GetMouseWorldLocation();
 	if (TargetLocation != FVector::ZeroVector)
 	{
-		FVector Start = GetActorLocation();
-
-		FVector Direction = (TargetLocation - Start).GetSafeNormal();
-
-		FVector End = Start + Direction * 1000.f;
-
-		FHitResult HitResult;
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(this);
-		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, CollisionParams);
-
-
+		Start = GetActorLocation();
+		Direction = (TargetLocation - Start).GetSafeNormal();
+		End = Start + Direction * 1000.f;
 		DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, -1.0f, 0, 1.0f);
 
 	}
 }
-
-
 FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -76,6 +66,13 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 
 				if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
 				{
+					AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(HitResult.GetActor());
+					if (HighlightableObject && !HighlightableObject->getDisplayStatus())
+					{
+						Params.AddIgnoredActor(HighlightableObject);
+					}
+
+					// Si l'objet est valide et visible, retourner la position de l'impact
 					return HitResult.Location;
 				}
 			}
@@ -286,6 +283,7 @@ bool AGameOffDevCharacter::CheckForPushableBox()
 	}
 	return false;
 }
+
 void AGameOffDevCharacter::BeginPushOrPull()
 {
 	FVector Start = GetActorLocation();
@@ -339,7 +337,7 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 
 bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 {
-	if (!TargetActor)
+	if (!TargetActor || CurrentLampeTorche == nullptr)
 	{
 		return false;
 	}
@@ -349,6 +347,7 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 	float Length = 900.f;
 	float ConeAngle = 25.f;
 	UStaticMeshComponent* StaticMeshComponent = TargetActor->FindComponentByClass<UStaticMeshComponent>();
+
 	if (!StaticMeshComponent)
 	{
 		return false;
@@ -380,7 +379,7 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 			FVector WorldVertexPos = ComponentTransform.TransformPosition(VertexPos);
 
 			Vertices.Add(WorldVertexPos);
-			DrawDebugPoint(GetWorld(), WorldVertexPos, 10.f, FColor::Red, false, 1.f);
+			//DrawDebugPoint(GetWorld(), WorldVertexPos, 10.f, FColor::Red, false, 1.f);
 		}
 
 		FVector MouseWorldPosition = GetMouseWorldLocation();

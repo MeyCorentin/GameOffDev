@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "LampeTorche.h"
 #include "PoussableBox.h"
+#include "HighlightableObject.h"
 #include "GameOffDevCharacter.generated.h"
 
 class USpringArmComponent;
@@ -59,12 +60,8 @@ public:
 protected:
 
 
-	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
-	void DrawDetectionConeToMouse();
-
-	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
 	FVector GetMouseWorldLocation() const;
@@ -75,6 +72,8 @@ protected:
 
 	void CheckForLampeTorche();
 
+	void DrawDetectionConeToMouse();
+
 	void PickupLampeTorche(ALampeTorche* LampeTorche);
 	
 	void BeginPushOrPull();
@@ -83,10 +82,8 @@ protected:
 
 	bool CheckForPushableBox();
 protected:
-	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
-	// To add mapping context
+
 	virtual void BeginPlay();
 };
 

@@ -18,6 +18,8 @@ public:
     // Sets default values for this actor's properties
     AHighlightableObject();
 
+    bool getDisplayStatus();
+
 protected:
     // Mesh component representing the visible part of the object
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -28,4 +30,15 @@ protected:
 
     // Checks if the object is within the flashlight's cone of illumination
     bool IsIlluminatedByFlashlight(ALampeTorche* Flashlight);
+
+    void HandleObjectStatus();
+
+    void DisplayObject();
+
+    void HideObject();
+
+    FVector GetWorldVertexPosition(int32 LODIndex, int32 VertexIndex) const;
+
+    bool isDisplay;
+
 };
