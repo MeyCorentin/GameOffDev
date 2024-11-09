@@ -67,9 +67,8 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 			FVector WorldLocation, WorldDirection;
 			if (PlayerController->DeprojectScreenPositionToWorld(MouseX, MouseY, WorldLocation, WorldDirection))
 			{
-				// Tracer une ligne pour obtenir le point d'impact
 				FVector Start = WorldLocation;
-				FVector End = Start + (WorldDirection * 10000.f); // Distance de projection
+				FVector End = Start + (WorldDirection * 10000.f);
 
 				FHitResult HitResult;
 				FCollisionQueryParams Params;
@@ -82,7 +81,7 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 			}
 		}
 	}
-	return FVector::ZeroVector; // Si aucun impact, retourne un vecteur nul
+	return FVector::ZeroVector;
 }
 
 
@@ -125,9 +124,6 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 	}
 }
 
-
-
-
 void AGameOffDevCharacter::FaceMouseCursor()
 {
 	FVector TargetLocation = GetMouseWorldLocation();
@@ -138,7 +134,7 @@ void AGameOffDevCharacter::FaceMouseCursor()
 		FRotator NewRotation = Direction.Rotation();
 		NewRotation.Pitch = 0.0f;
 		NewRotation.Roll = 0.0f;
-		NewRotation.Yaw -=90.0f;
+		NewRotation.Yaw -= 90.0f;
 
 		SetActorRotation(NewRotation);
 	}
@@ -156,6 +152,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	FaceMouseCursor();
 	TraceToMouseCursor();
 	CheckForLampeTorche();
+	DrawDetectionConeToMouse();
 }
 
 void AGameOffDevCharacter::BeginPlay()
@@ -172,7 +169,7 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	
+
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
@@ -249,7 +246,7 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 					PushDirection = -RightDirection;
 				}
 
-				FVector NewLocation = TargetBox->GetActorLocation() + (PushDirection); // Ajustez la vitesse ici
+				FVector NewLocation = TargetBox->GetActorLocation() + (PushDirection / 2); // Ajustez la vitesse ici
 				TargetBox->SetActorLocation(NewLocation);
 			}
 		}
@@ -324,6 +321,95 @@ void AGameOffDevCharacter::BeginPushOrPull()
 	}
 }
 
+void AGameOffDevCharacter::DrawDetectionConeToMouse()
+{
+	FVector HandPosition = GetMesh()->GetSocketLocation(TEXT("ik_hand_rSocket"));
+	FVector MouseWorldPosition = GetMouseWorldLocation();
+
+	FVector MouseWorldDirection;
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	FVector CameraLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+	MouseWorldDirection = (MouseWorldPosition - CameraLocation).GetSafeNormal();
+	FVector CharacterDirection = (MouseWorldPosition - HandPosition).GetSafeNormal();
+
+	float Length = 900.f;
+	float ConeAngle = 25.f;
+	DrawDebugCone(GetWorld(), HandPosition, CharacterDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Green, false, -1.0f, 0, 1.0f);
+}
+
+bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
+{
+	if (!TargetActor)
+	{
+		return false;
+	}
+
+	FVector HandPosition = GetMesh()->GetSocketLocation(TEXT("ik_hand_rSocket"));
+
+	float Length = 900.f;
+	float ConeAngle = 25.f;
+	UStaticMeshComponent* StaticMeshComponent = TargetActor->FindComponentByClass<UStaticMeshComponent>();
+	if (!StaticMeshComponent)
+	{
+		return false;
+	}
+
+	UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh();
+	if (!StaticMesh)
+	{
+		return false;
+	}
+
+	FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
+	if (!RenderData)
+	{
+		return false;
+	}
+
+	FTransform ComponentTransform = StaticMeshComponent->GetComponentTransform();
+
+	for (int32 LODIndex = 0; LODIndex < RenderData->LODResources.Num(); ++LODIndex)
+	{
+		const FStaticMeshLODResources& LODResources = RenderData->LODResources[LODIndex];
+		const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
+
+		TArray<FVector> Vertices;
+		for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
+		{
+			FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
+			FVector WorldVertexPos = ComponentTransform.TransformPosition(VertexPos);
+
+			Vertices.Add(WorldVertexPos);
+			DrawDebugPoint(GetWorld(), WorldVertexPos, 10.f, FColor::Red, false, 1.f);
+		}
+
+		FVector MouseWorldPosition = GetMouseWorldLocation();
+		FVector MouseWorldDirection;
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		FVector CameraLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
+		MouseWorldDirection = (MouseWorldPosition - CameraLocation).GetSafeNormal();
+		FVector CharacterDirection = (MouseWorldPosition - HandPosition).GetSafeNormal();
+
+		for (FVector& Vertex : Vertices)
+		{
+			FVector DirectionToTarget = (Vertex - HandPosition).GetSafeNormal();
+
+			float DotProduct = FVector::DotProduct(CharacterDirection, DirectionToTarget);
+			float Angle = FMath::Acos(DotProduct) * 180.f / PI;
+
+			if (Angle <= ConeAngle)
+			{
+				float DistanceToTarget = FVector::Dist(HandPosition, Vertex);
+				if (DistanceToTarget <= Length)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
 
 void AGameOffDevCharacter::Look(const FInputActionValue& Value)
 {

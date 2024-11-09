@@ -52,12 +52,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PoussableBox")
 	APoussableBox* TargetBox;
 
+
+	bool IsActorInDetectionCone(AActor* TargetActor);
+
 	bool bIsPushingOrPulling = false;
 protected:
 
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
+
+	void DrawDetectionConeToMouse();
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
