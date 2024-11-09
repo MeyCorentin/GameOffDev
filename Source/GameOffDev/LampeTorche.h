@@ -33,4 +33,7 @@ public:
 
     // Fonction pour attacher la lampe torche à la main du joueur
     void AttachToPlayer(class USkeletalMeshComponent* PlayerMesh);
+
+    void ChangeColor(int32 ColorCode);
 };
+

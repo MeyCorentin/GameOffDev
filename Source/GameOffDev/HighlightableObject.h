@@ -20,6 +20,9 @@ public:
 
     bool getDisplayStatus();
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Color")
+    FColor RequiredColor = FColor(255, 255, 255);
+
 protected:
     // Mesh component representing the visible part of the object
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -40,5 +43,4 @@ protected:
     FVector GetWorldVertexPosition(int32 LODIndex, int32 VertexIndex) const;
 
     bool isDisplay;
-
 };

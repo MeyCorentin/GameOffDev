@@ -42,6 +42,13 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PushOrPullAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SwitchColorAction1;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SwitchColorAction2;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SwitchColorAction3;
+
 public:
 	AGameOffDevCharacter();
 
@@ -63,6 +70,12 @@ protected:
 	void Move(const FInputActionValue& Value);
 
 	void Look(const FInputActionValue& Value);
+
+	void SwitchColor1();
+
+	void SwitchColor2();
+
+	void SwitchColor3();
 
 	FVector GetMouseWorldLocation() const;
 

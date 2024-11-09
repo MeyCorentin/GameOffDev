@@ -167,16 +167,19 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		}
 	}
 
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
+		EnhancedInputComponent->BindAction(SwitchColorAction1, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor1);
+		EnhancedInputComponent->BindAction(SwitchColorAction2, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor2);
+		EnhancedInputComponent->BindAction(SwitchColorAction3, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor3);
 	}
 }
-
 
 void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 {
@@ -249,6 +252,29 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 		}
 	}
 }
+
+void AGameOffDevCharacter::SwitchColor1()
+{
+	if (CurrentLampeTorche)
+	{
+		CurrentLampeTorche->ChangeColor(1);
+	}
+}
+void AGameOffDevCharacter::SwitchColor2()
+{
+	if (CurrentLampeTorche)
+	{
+		CurrentLampeTorche->ChangeColor(2);
+	}
+}
+void AGameOffDevCharacter::SwitchColor3()
+{
+	if (CurrentLampeTorche)
+	{
+		CurrentLampeTorche->ChangeColor(3);
+	}
+}
+
 
 void AGameOffDevCharacter::EndPushOrPull()
 {
@@ -346,8 +372,8 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 
 	float Length = 900.f;
 	float ConeAngle = 25.f;
+	AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(TargetActor);
 	UStaticMeshComponent* StaticMeshComponent = TargetActor->FindComponentByClass<UStaticMeshComponent>();
-
 	if (!StaticMeshComponent)
 	{
 		return false;
@@ -356,6 +382,19 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 	UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh();
 	if (!StaticMesh)
 	{
+		return false;
+	}
+
+	if (HighlightableObject->RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
+	{
+		if (HighlightableObject->RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
+				static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
+				static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
+			return false;
+		}
+
 		return false;
 	}
 

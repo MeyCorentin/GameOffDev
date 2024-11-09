@@ -50,7 +50,6 @@ void AHighlightableObject::HandleObjectStatus()
 
 }
 
-
 void AHighlightableObject::DisplayObject()
 {
     MeshComponent->SetVisibility(true);

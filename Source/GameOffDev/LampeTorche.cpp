@@ -36,6 +36,27 @@ void ALampeTorche::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
+
+// Fonction pour changer la couleur de la lampe torche
+void ALampeTorche::ChangeColor(int32 ColorCode)
+{
+    switch (ColorCode)
+    {
+    case 1:
+        LampSpotLight->SetLightColor(FLinearColor::Red);
+        break;
+    case 2:
+        LampSpotLight->SetLightColor(FLinearColor::Green);
+        break;
+    case 3:
+        LampSpotLight->SetLightColor(FLinearColor::Blue);
+        break;
+    default:
+        UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
+        break;
+    }
+}
+
 // Attacher la lampe torche à la main du joueur
 void ALampeTorche::AttachToPlayer(USkeletalMeshComponent* PlayerMesh)
 {
