@@ -167,7 +167,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	FaceMouseCursor();
 	//TraceToMouseCursor();
 	CheckNearObject();
-	//DrawDetectionConeToMouse();
+	DrawDetectionConeToMouse();
 }
 
 void AGameOffDevCharacter::BeginPlay()

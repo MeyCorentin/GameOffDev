@@ -70,17 +70,69 @@ void AHighlightableObject::DisplayObject()
     // Utiliser TargetActor si défini, sinon MeshComponent
     if (TargetActor)
     {
-        TargetActor->SetActorHiddenInGame(false);
-        TargetActor->SetActorEnableCollision(true);
+        if (!CheckCollisionWithPlayer(TargetActor->FindComponentByClass<UStaticMeshComponent>()))
+        {
+            TargetActor->SetActorHiddenInGame(false);
+            TargetActor->SetActorEnableCollision(true);
+        }
     }
     else
     {
-        MeshComponent->SetVisibility(true);
-        MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        if (!CheckCollisionWithPlayer(MeshComponent))
+        {
+            MeshComponent->SetVisibility(true);
+            MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        }
     }
 
     isDisplay = true;
 }
+
+
+bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshComponentToTest)
+{
+    if (!MeshComponentToTest)
+    {
+        return false;
+    }
+
+    UStaticMesh* StaticMesh = MeshComponentToTest->GetStaticMesh();
+    if (!StaticMesh)
+    {
+        return false;
+    }
+    TArray<FVector> Vertices;
+    for (int32 LODIndex = 0; LODIndex < StaticMesh->GetRenderData()->LODResources.Num(); ++LODIndex)
+    {
+        const FStaticMeshLODResources& LODResources = StaticMesh->GetRenderData()->LODResources[LODIndex];
+        const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
+
+        for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
+        {
+            FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
+            FVector WorldVertexPos = MeshComponentToTest->GetComponentTransform().TransformPosition(VertexPos);
+
+            Vertices.Add(WorldVertexPos);
+        }
+    }
+    AActor* PlayerActor = GetWorld()->GetFirstPlayerController()->GetPawn();
+    if (PlayerActor)
+    {
+        FVector PlayerLocation = PlayerActor->GetActorLocation();
+        for (const FVector& Vertex : Vertices)
+        {
+            float DistanceToPlayer = FVector::Dist(Vertex, PlayerLocation);
+
+            if (DistanceToPlayer <= 120.f)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 
 void AHighlightableObject::HideObject()
 {

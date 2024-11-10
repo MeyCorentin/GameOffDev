@@ -41,6 +41,9 @@ protected:
 
     void DisplayObject();
 
+
+    bool CheckCollisionWithPlayer(UStaticMeshComponent* MeshComponent);
+
     void HideObject();
 
     FVector GetWorldVertexPosition(int32 LODIndex, int32 VertexIndex) const;
