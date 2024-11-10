@@ -82,23 +82,41 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 }
 
 
-void AGameOffDevCharacter::CheckForLampeTorche()
+void AGameOffDevCharacter::CheckNearObject()
 {
 	TArray<AActor*> NearbyActors;
 	FVector PlayerLocation = GetActorLocation();
 
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALampeTorche::StaticClass(), NearbyActors);
+	TArray<AActor*> NearbyBatteries;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattery::StaticClass(), NearbyBatteries);
+	NearbyActors.Append(NearbyBatteries);
+
 
 	for (AActor* Actor : NearbyActors)
 	{
-		ALampeTorche* LampeTorche = Cast<ALampeTorche>(Actor);
-		if (LampeTorche)
+		if (Actor->IsHidden())
 		{
-			float Distance = FVector::Dist(PlayerLocation, LampeTorche->GetActorLocation());
-			if (Distance <= 200.0f)
+			continue;
+		}
+
+		float Distance = FVector::Dist(PlayerLocation, Actor->GetActorLocation());
+		if (Distance <= 100)
+		{
+			ABattery* Battery = Cast<ABattery>(Actor);
+			if (Battery && CurrentLampeTorche != nullptr)
 			{
-				PickupLampeTorche(LampeTorche);
+				UE_LOG(LogTemp, Warning, TEXT("Detect Battery"));
+				CurrentLampeTorche->Charge(Battery->GetEnergyValue());
+				Battery->Destroy();
 				break;
+			}
+			ALampeTorche* LampeTorche = Cast<ALampeTorche>(Actor);
+			if (LampeTorche && CurrentLampeTorche == nullptr)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("FlashLight"));
+					PickupLampeTorche(LampeTorche);
+					break;
 			}
 		}
 	}
@@ -148,7 +166,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	FaceMouseCursor();
 	//TraceToMouseCursor();
-	CheckForLampeTorche();
+	CheckNearObject();
 	//DrawDetectionConeToMouse();
 }
 
@@ -361,7 +379,7 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 	DrawDebugCone(GetWorld(), HandPosition, CharacterDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Green, false, -1.0f, 0, 1.0f);
 }
 
-bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
+bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor)
 {
 	if (!TargetActor || CurrentLampeTorche == nullptr)
 	{
@@ -385,15 +403,11 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor)
 		return false;
 	}
 
-	if (HighlightableObject->RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
+	if (RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
 	{
-		if (HighlightableObject->RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
-			//static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
-			//static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
-			return false;
-		}
+		//UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
+		//static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
+		//static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
 
 		return false;
 	}

@@ -56,6 +56,8 @@ public:
 
     void ChangeColor(int32 ColorCode);
 
+    void Charge(float energy);
+
     FTimerHandle BatteryTimerHandle;
 
     UFUNCTION()

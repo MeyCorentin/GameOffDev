@@ -28,6 +28,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* MeshComponent;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    AActor* TargetActor;
+
     // Called every frame to check visibility based on flashlight illumination
     virtual void Tick(float DeltaTime) override;
 

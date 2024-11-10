@@ -55,6 +55,12 @@ void ALampeTorche::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
+
+void ALampeTorche::Charge(float energy)
+{
+    BatteryLevel += energy;
+}
+
 void ALampeTorche::ChangeColor(int32 ColorCode)
 {
     switch (ColorCode)
@@ -69,7 +75,7 @@ void ALampeTorche::ChangeColor(int32 ColorCode)
         LampSpotLight->SetLightColor(FLinearColor::Blue);
         break;
     default:
-        UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
+        //UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
         break;
     }
 }
@@ -91,6 +97,7 @@ void ALampeTorche::UpdateBattery()
         float BatteryProportion = BatteryLevel / InitBatteryLevel;
         LampSpotLight->SetAttenuationRadius(InitialAttenuationRadius * BatteryProportion);
         LampSpotLight->SetIntensity(InitialIntensity * BatteryProportion);
+        UE_LOG(LogTemp, Warning, TEXT("Battery Level %f"), BatteryLevel);
 
         if (BatteryLevel <= 0.f)
         {

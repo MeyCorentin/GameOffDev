@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "LampeTorche.h"
+#include "Battery.h"
 #include "PoussableBox.h"
 #include "HighlightableObject.h"
 #include "GameOffDevCharacter.generated.h"
@@ -61,7 +62,7 @@ public:
 	APoussableBox* TargetBox;
 
 
-	bool IsActorInDetectionCone(AActor* TargetActor);
+	bool IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor);
 
 	bool bIsPushingOrPulling = false;
 protected:
@@ -83,7 +84,7 @@ protected:
 
 	void TraceToMouseCursor();
 
-	void CheckForLampeTorche();
+	void CheckNearObject();
 
 	void DrawDetectionConeToMouse();
 
