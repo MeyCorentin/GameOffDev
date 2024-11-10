@@ -167,7 +167,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	FaceMouseCursor();
 	//TraceToMouseCursor();
 	CheckNearObject();
-	DrawDetectionConeToMouse();
+	//DrawDetectionConeToMouse();
 }
 
 void AGameOffDevCharacter::BeginPlay()
@@ -365,6 +365,11 @@ void AGameOffDevCharacter::BeginPushOrPull()
 
 void AGameOffDevCharacter::DrawDetectionConeToMouse()
 {
+	if (!CurrentLampeTorche || !CurrentLampeTorche->LampSpotLight)
+	{
+		return;
+	}
+
 	FVector HandPosition = GetMesh()->GetSocketLocation(TEXT("ik_hand_rSocket"));
 	FVector MouseWorldPosition = GetMouseWorldLocation();
 
@@ -374,10 +379,25 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 	MouseWorldDirection = (MouseWorldPosition - CameraLocation).GetSafeNormal();
 	FVector CharacterDirection = (MouseWorldPosition - HandPosition).GetSafeNormal();
 
-	float Length = 900.f;
-	float ConeAngle = 25.f;
-	DrawDebugCone(GetWorld(), HandPosition, CharacterDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Green, false, -1.0f, 0, 1.0f);
+	float Length = CurrentLampeTorche->LampSpotLight->AttenuationRadius;
+	float ConeAngle = CurrentLampeTorche->LampSpotLight->OuterConeAngle;
+
+	DrawDebugCone(
+		GetWorld(),
+		HandPosition,
+		CharacterDirection,
+		Length,
+		FMath::DegreesToRadians(ConeAngle),
+		FMath::DegreesToRadians(ConeAngle),
+		12,
+		FColor::Green,
+		false,
+		-1.0f,
+		0,
+		1.0f
+	);
 }
+
 
 bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor)
 {
@@ -388,8 +408,8 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor, FColor Re
 
 	FVector HandPosition = GetMesh()->GetSocketLocation(TEXT("ik_hand_rSocket"));
 
-	float Length = 900.f;
-	float ConeAngle = 25.f;
+	float Length = CurrentLampeTorche->LampSpotLight->AttenuationRadius;
+	float ConeAngle = CurrentLampeTorche->LampSpotLight->OuterConeAngle;
 	AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(TargetActor);
 	UStaticMeshComponent* StaticMeshComponent = TargetActor->FindComponentByClass<UStaticMeshComponent>();
 	if (!StaticMeshComponent)
