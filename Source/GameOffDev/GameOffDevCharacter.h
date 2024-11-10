@@ -50,6 +50,9 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SwitchColorAction3;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DebugAction;
+
 public:
 	AGameOffDevCharacter();
 
@@ -61,6 +64,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PoussableBox")
 	APoussableBox* TargetBox;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bIsDebugModeEnabled = true;
 
 	bool IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor);
 
@@ -95,9 +100,11 @@ protected:
 	void EndPushOrPull();
 
 	bool CheckForPushableBox();
-protected:
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void BeginPlay();
+
+	void ChangeDebugMode();
 };
 

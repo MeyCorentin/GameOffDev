@@ -53,6 +53,11 @@ void ALampeTorche::BeginPlay()
 void ALampeTorche::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(0, 0.1f, FColor::White, FString::Printf(TEXT("%.0f%%"), BatteryLevel));
+    }
+
 }
 
 
@@ -97,7 +102,6 @@ void ALampeTorche::UpdateBattery()
         float BatteryProportion = BatteryLevel / InitBatteryLevel;
         LampSpotLight->SetAttenuationRadius(InitialAttenuationRadius * BatteryProportion);
         LampSpotLight->SetIntensity(InitialIntensity * BatteryProportion);
-        UE_LOG(LogTemp, Warning, TEXT("Battery Level %f"), BatteryLevel);
 
         if (BatteryLevel <= 0.f)
         {

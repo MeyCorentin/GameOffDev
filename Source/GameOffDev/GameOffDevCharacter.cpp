@@ -71,8 +71,6 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 					{
 						Params.AddIgnoredActor(HighlightableObject);
 					}
-
-					// Si l'objet est valide et visible, retourner la position de l'impact
 					return HitResult.Location;
 				}
 			}
@@ -106,7 +104,8 @@ void AGameOffDevCharacter::CheckNearObject()
 			ABattery* Battery = Cast<ABattery>(Actor);
 			if (Battery && CurrentLampeTorche != nullptr)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Detect Battery"));
+				if (bIsDebugModeEnabled)
+					UE_LOG(LogTemp, Warning, TEXT("Detect Battery"));
 				CurrentLampeTorche->Charge(Battery->GetEnergyValue());
 				Battery->Destroy();
 				break;
@@ -114,9 +113,10 @@ void AGameOffDevCharacter::CheckNearObject()
 			ALampeTorche* LampeTorche = Cast<ALampeTorche>(Actor);
 			if (LampeTorche && CurrentLampeTorche == nullptr)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("FlashLight"));
-					PickupLampeTorche(LampeTorche);
-					break;
+				if (bIsDebugModeEnabled)
+					UE_LOG(LogTemp, Warning, TEXT("FlashLight"));
+				PickupLampeTorche(LampeTorche);
+				break;
 			}
 		}
 	}
@@ -165,9 +165,12 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	FaceMouseCursor();
-	//TraceToMouseCursor();
 	CheckNearObject();
-	//DrawDetectionConeToMouse();
+	if (bIsDebugModeEnabled == true)
+	{
+		TraceToMouseCursor();
+		DrawDetectionConeToMouse();
+	}
 }
 
 void AGameOffDevCharacter::BeginPlay()
@@ -196,7 +199,13 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(SwitchColorAction1, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor1);
 		EnhancedInputComponent->BindAction(SwitchColorAction2, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor2);
 		EnhancedInputComponent->BindAction(SwitchColorAction3, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor3);
+		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
 	}
+}
+
+void AGameOffDevCharacter::ChangeDebugMode()
+{
+	(bIsDebugModeEnabled == true) ? bIsDebugModeEnabled = false : bIsDebugModeEnabled = true;
 }
 
 void AGameOffDevCharacter::Move(const FInputActionValue& Value)
@@ -346,7 +355,10 @@ void AGameOffDevCharacter::BeginPushOrPull()
 
 	if (bHit)
 	{
-		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
+
+
+		if (bIsDebugModeEnabled)
+			DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
 		TargetBox = Cast<APoussableBox>(HitResult.GetActor());
 		if (TargetBox != nullptr)
 		{
@@ -359,7 +371,8 @@ void AGameOffDevCharacter::BeginPushOrPull()
 	}
 	else
 	{
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
+		if (bIsDebugModeEnabled)
+			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 	}
 }
 
@@ -425,10 +438,6 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor, FColor Re
 
 	if (RequiredColor != CurrentLampeTorche->LampSpotLight->LightColor)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Color mismatch: RequiredColor = (%f, %f, %f), LampSpotLight Color = (%f, %f, %f)"),
-		//static_cast<float>(HighlightableObject->RequiredColor.R), static_cast<float>(HighlightableObject->RequiredColor.G), static_cast<float>(HighlightableObject->RequiredColor.B),
-		//static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.R), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.G), static_cast<float>(CurrentLampeTorche->LampSpotLight->LightColor.B));
-
 		return false;
 	}
 
@@ -452,7 +461,8 @@ bool AGameOffDevCharacter::IsActorInDetectionCone(AActor* TargetActor, FColor Re
 			FVector WorldVertexPos = ComponentTransform.TransformPosition(VertexPos);
 
 			Vertices.Add(WorldVertexPos);
-			//DrawDebugPoint(GetWorld(), WorldVertexPos, 10.f, FColor::Red, false, 1.f);
+			if (bIsDebugModeEnabled)
+				DrawDebugPoint(GetWorld(), WorldVertexPos, 10.f, FColor::Red, false, 1.f);
 		}
 
 		FVector MouseWorldPosition = GetMouseWorldLocation();
