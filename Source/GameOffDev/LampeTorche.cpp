@@ -52,11 +52,6 @@ void ALampeTorche::BeginPlay()
 void ALampeTorche::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(0, 0.1f, FColor::White, FString::Printf(TEXT("%.0f%%"), BatteryLevel));
-    }
-
 }
 
 

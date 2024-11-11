@@ -57,6 +57,7 @@ class AGameOffDevCharacter : public ACharacter
 	UInputAction* DropAction;
 
 public:
+
 	AGameOffDevCharacter();
 
 	virtual void Tick(float DeltaTime) override;
@@ -67,12 +68,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PoussableBox")
 	APoussableBox* TargetBox;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> BatteryWidgetClass;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bIsDebugModeEnabled = true;
 
 	bool IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor);
 
 	bool bIsPushingOrPulling = false;
+
+	UUserWidget* BatteryWidgetInstance;
 protected:
 
 
@@ -108,5 +114,7 @@ protected:
 	void ChangeDebugMode();
 
 	void DropObject();
+
+	void UpdateBatteryUI();
 };
 

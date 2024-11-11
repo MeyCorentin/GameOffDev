@@ -11,6 +11,8 @@
 #include "EnhancedInputComponent.h"
 #include "LampeTorche.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/TextBlock.h" 
+#include "Blueprint/UserWidget.h"
 #include "InputActionValue.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter)
@@ -171,11 +173,38 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 		TraceToMouseCursor();
 		DrawDetectionConeToMouse();
 	}
+	UpdateBatteryUI();
 }
 
 void AGameOffDevCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	if (BatteryWidgetClass)
+	{
+		BatteryWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), BatteryWidgetClass);
+		if (BatteryWidgetInstance)
+		{
+			BatteryWidgetInstance->AddToViewport();
+		}
+	}
+}
+
+void AGameOffDevCharacter::UpdateBatteryUI()
+{
+	if (BatteryWidgetInstance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Update Battery 1"));
+		UTextBlock* BatteryTextBlock = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("BatteryTextBlock"));
+		if (BatteryTextBlock)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Update Battery 2"));
+			if (CurrentLampeTorche != nullptr)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Update Battery 3"));
+				BatteryTextBlock->SetText(FText::FromString(FString::Printf(TEXT("Battery: %.1f%%"), CurrentLampeTorche->BatteryLevel)));
+			}
+		}
+	}
 }
 
 void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
