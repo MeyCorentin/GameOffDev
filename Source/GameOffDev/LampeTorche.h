@@ -54,6 +54,6 @@ public:
     UFUNCTION()
     void UpdateBattery();
 
-    bool IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor);
+    bool IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor);
 };
 

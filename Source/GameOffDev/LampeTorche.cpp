@@ -107,69 +107,54 @@ void ALampeTorche::UpdateBattery()
             LampSpotLight->SetIntensity(0.f);
         }
     }
-}
+ }
 
-bool ALampeTorche::IsActorInDetectionCone(AActor* TargetActor, FColor RequiredColor)
+bool ALampeTorche::IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor)
 {
-    if (!TargetActor || !LampSpotLight)
-    {
-        return false;
-    }
-
-    // Récupérer la portée (longueur) et l'angle du cône de lumière
     float Length = LampSpotLight->AttenuationRadius;
     float ConeAngle = LampSpotLight->OuterConeAngle;
 
-    // Vérifier que l'objet ciblé est de type AHighlightableObject et possède un StaticMeshComponent
-    AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(TargetActor);
-    UStaticMeshComponent* StaticMeshComponent = TargetActor->FindComponentByClass<UStaticMeshComponent>();
-    if (!StaticMeshComponent)
+    AHighlightableObject* parent = Cast<AHighlightableObject>(Parent);
+    if (!parent)
     {
         return false;
     }
 
-    UStaticMesh* StaticMesh = StaticMeshComponent->GetStaticMesh();
-    if (!StaticMesh || RequiredColor != LampSpotLight->LightColor)
+    // Récupérer les vertices depuis le HighlightComponent
+    TArray<FVector> Vertices = parent->GetVertices();
+    if (Vertices.Num() == 0)
     {
         return false;
     }
 
-    FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
-    if (!RenderData)
+    // Vérifier que l'objet possède la bonne couleur
+    if (RequiredColor != LampSpotLight->LightColor)
     {
         return false;
     }
 
+    // Récupérer la position de la lampe et la direction de la lumière
     FVector LampPosition = LampSpotLight->GetComponentLocation();
     FVector LampDirection = LampSpotLight->GetForwardVector();
 
-    FTransform ComponentTransform = StaticMeshComponent->GetComponentTransform();
-
-    for (int32 LODIndex = 0; LODIndex < RenderData->LODResources.Num(); ++LODIndex)
+    for (const FVector& VertexPos : Vertices)
     {
-        const FStaticMeshLODResources& LODResources = RenderData->LODResources[LODIndex];
-        const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
+        FVector WorldVertexPos = Child->GetActorTransform().TransformPosition(VertexPos);
+        FVector DirectionToVertex = (WorldVertexPos - LampPosition).GetSafeNormal();
+        float DotProduct = FVector::DotProduct(LampDirection, DirectionToVertex);
+        float Angle = FMath::Acos(DotProduct) * 180.f / PI;
 
-        for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
+        if (Angle <= ConeAngle)
         {
-            FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
-            FVector WorldVertexPos = ComponentTransform.TransformPosition(VertexPos);
-
-            FVector DirectionToVertex = (WorldVertexPos - LampPosition).GetSafeNormal();
-
-            float DotProduct = FVector::DotProduct(LampDirection, DirectionToVertex);
-            float Angle = FMath::Acos(DotProduct) * 180.f / PI;
-
-            if (Angle <= ConeAngle)
+            float DistanceToVertex = FVector::Dist(LampPosition, WorldVertexPos);
+            if (DistanceToVertex <= Length)
             {
-                float DistanceToVertex = FVector::Dist(LampPosition, WorldVertexPos);
-                if (DistanceToVertex <= Length)
-                {
-                    return true;
-                }
+                return true;
             }
         }
     }
 
     return false;
 }
+
+

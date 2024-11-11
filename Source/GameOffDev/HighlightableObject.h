@@ -22,6 +22,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Color")
     FColor RequiredColor = FColor(255, 255, 255);
 
+    TArray<FVector> GetVertices();
+    TArray<FVector> GetVerticesTargetActor();
+    TArray<FVector> GetVerticesCurrent();
+
 protected:
     // Mesh component representing the visible part of the object
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
