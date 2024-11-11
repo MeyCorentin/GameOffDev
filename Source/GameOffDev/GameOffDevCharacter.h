@@ -77,11 +77,8 @@ protected:
 
 	void Look(const FInputActionValue& Value);
 
-	void SwitchColor1();
-
-	void SwitchColor2();
-
-	void SwitchColor3();
+	void SwitchColor(int32 ColorCode);
+	void SwitchColorWithArgs(const FInputActionValue& Value, const bool bEnable, const int ColorIndex);
 
 	FVector GetMouseWorldLocation() const;
 

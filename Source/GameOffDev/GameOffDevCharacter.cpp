@@ -196,12 +196,42 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
-		EnhancedInputComponent->BindAction(SwitchColorAction1, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor1);
-		EnhancedInputComponent->BindAction(SwitchColorAction2, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor2);
-		EnhancedInputComponent->BindAction(SwitchColorAction3, ETriggerEvent::Started, this, &AGameOffDevCharacter::SwitchColor3);
+		if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+		{
+			if (UEnhancedInputComponent* EnhancedInputComponentColor = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
+			{
+				EnhancedInputComponentColor->BindAction(SwitchColorAction1, ETriggerEvent::Started, this,
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 1);
+
+				EnhancedInputComponentColor->BindAction(SwitchColorAction2, ETriggerEvent::Started, this,
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 2);
+
+				EnhancedInputComponentColor->BindAction(SwitchColorAction3, ETriggerEvent::Started, this,
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 3);
+			}
+		}
+
 		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
 	}
 }
+
+void AGameOffDevCharacter::SwitchColorWithArgs(const FInputActionValue& Value, const bool bEnable, const int ColorIndex)
+{
+	if (bEnable)
+	{
+		SwitchColor(ColorIndex); 
+	}
+}
+
+
+void AGameOffDevCharacter::SwitchColor(int32 ColorCode)
+{
+	if (CurrentLampeTorche)
+	{
+		CurrentLampeTorche->ChangeColor(ColorCode);
+	}
+}
+
 
 void AGameOffDevCharacter::ChangeDebugMode()
 {
@@ -279,29 +309,6 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 		}
 	}
 }
-
-void AGameOffDevCharacter::SwitchColor1()
-{
-	if (CurrentLampeTorche)
-	{
-		CurrentLampeTorche->ChangeColor(1);
-	}
-}
-void AGameOffDevCharacter::SwitchColor2()
-{
-	if (CurrentLampeTorche)
-	{
-		CurrentLampeTorche->ChangeColor(2);
-	}
-}
-void AGameOffDevCharacter::SwitchColor3()
-{
-	if (CurrentLampeTorche)
-	{
-		CurrentLampeTorche->ChangeColor(3);
-	}
-}
-
 
 void AGameOffDevCharacter::EndPushOrPull()
 {
