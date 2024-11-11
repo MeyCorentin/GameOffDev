@@ -212,8 +212,19 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		}
 
 		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
+		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::DropObject);
 	}
 }
+
+void AGameOffDevCharacter::DropObject()
+{
+	if (CurrentLampeTorche && !bIsPushingOrPulling)
+	{
+		CurrentLampeTorche->Destroy();
+		CurrentLampeTorche = nullptr;
+	}
+}
+
 
 void AGameOffDevCharacter::SwitchColorWithArgs(const FInputActionValue& Value, const bool bEnable, const int ColorIndex)
 {

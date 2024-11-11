@@ -53,6 +53,9 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DebugAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DropAction;
+
 public:
 	AGameOffDevCharacter();
 
@@ -103,5 +106,7 @@ protected:
 	virtual void BeginPlay();
 
 	void ChangeDebugMode();
+
+	void DropObject();
 };
 
