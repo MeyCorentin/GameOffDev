@@ -58,6 +58,8 @@ void ALampeTorche::Tick(float DeltaTime)
 void ALampeTorche::Charge(float energy)
 {
     BatteryLevel += energy;
+    if (BatteryLevel > 100)
+        BatteryLevel = 100;
 }
 
 void ALampeTorche::ChangeColor(int32 ColorCode)
