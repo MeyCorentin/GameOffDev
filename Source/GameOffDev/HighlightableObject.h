@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "LampeTorche.h"
 #include "HighlightableObject.generated.h"
 
 // Forward declaration of AFlashlight class
@@ -35,7 +34,7 @@ protected:
     virtual void Tick(float DeltaTime) override;
 
     // Checks if the object is within the flashlight's cone of illumination
-    bool IsIlluminatedByFlashlight(ALampeTorche* Flashlight);
+    bool IsIlluminatedByFlashlight(FColor RequiredColor);
 
     void HandleObjectStatus();
 

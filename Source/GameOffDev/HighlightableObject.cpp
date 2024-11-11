@@ -1,7 +1,8 @@
 #include "HighlightableObject.h"
 #include "Components/StaticMeshComponent.h"
-#include "EngineUtils.h" 
-#include "GameOffDevCharacter.h"
+#include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "LampeTorche.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -19,26 +20,28 @@ AHighlightableObject::AHighlightableObject()
     isDisplay = false;
 }
 
-bool AHighlightableObject::IsIlluminatedByFlashlight(ALampeTorche* Flashlight)
+bool AHighlightableObject::IsIlluminatedByFlashlight(FColor TargetColor)
 {
-    // Récupérer le personnage du jeu
-    AGameOffDevCharacter* Character = Cast<AGameOffDevCharacter>(GetWorld()->GetFirstPlayerController()->GetCharacter());
+    TArray<AActor*> FoundFlashlights;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALampeTorche::StaticClass(), FoundFlashlights);
 
-    // Si TargetActor est défini, vérifier la détection sur lui, sinon vérifier sur cet acteur
-    if (Character)
+    for (AActor* FlashlightActor : FoundFlashlights)
     {
+        ALampeTorche* Flashlight = Cast<ALampeTorche>(FlashlightActor);
+
         if (TargetActor)
         {
-            return Character->IsActorInDetectionCone(TargetActor, RequiredColor);
+            return Flashlight->IsActorInDetectionCone(TargetActor, RequiredColor);
         }
         else
         {
-            return Character->IsActorInDetectionCone(this, RequiredColor);
+            return Flashlight->IsActorInDetectionCone(this, RequiredColor);
         }
     }
 
     return false;
 }
+
 
 bool AHighlightableObject::getDisplayStatus()
 {
@@ -55,7 +58,7 @@ void AHighlightableObject::HandleObjectStatus()
         break;
     }
 
-    if (Flashlight && IsIlluminatedByFlashlight(Flashlight))
+    if (Flashlight && IsIlluminatedByFlashlight(RequiredColor))
     {
         DisplayObject();
     }
@@ -67,7 +70,6 @@ void AHighlightableObject::HandleObjectStatus()
 
 void AHighlightableObject::DisplayObject()
 {
-    // Utiliser TargetActor si défini, sinon MeshComponent
     if (TargetActor)
     {
         if (!CheckCollisionWithPlayer(TargetActor->FindComponentByClass<UStaticMeshComponent>()))
@@ -136,7 +138,6 @@ bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshCo
 
 void AHighlightableObject::HideObject()
 {
-    // Utiliser TargetActor si défini, sinon MeshComponent
     if (TargetActor)
     {
         TargetActor->SetActorHiddenInGame(true);
