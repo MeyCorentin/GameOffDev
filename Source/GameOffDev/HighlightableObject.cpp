@@ -24,18 +24,20 @@ bool AHighlightableObject::IsIlluminatedByFlashlight(FColor TargetColor)
 {
     TArray<AActor*> FoundFlashlights;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALampeTorche::StaticClass(), FoundFlashlights);
-
+    bool isIlluminated = false;
     for (AActor* FlashlightActor : FoundFlashlights)
     {
         ALampeTorche* Flashlight = Cast<ALampeTorche>(FlashlightActor);
         if (TargetActor)
         {
-            return Flashlight->IsActorInDetectionCone(this, TargetActor, RequiredColor);
+            isIlluminated = Flashlight->IsActorInDetectionCone(this, TargetActor, RequiredColor);
         }
         else
         {
-            return Flashlight->IsActorInDetectionCone(this, this, RequiredColor);
+            isIlluminated = Flashlight->IsActorInDetectionCone(this, this, RequiredColor);
         }
+        if (isIlluminated)
+            return true;
     }
 
     return false;
