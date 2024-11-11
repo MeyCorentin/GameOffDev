@@ -193,14 +193,11 @@ void AGameOffDevCharacter::UpdateBatteryUI()
 {
 	if (BatteryWidgetInstance)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Update Battery 1"));
 		UTextBlock* BatteryTextBlock = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("BatteryTextBlock"));
 		if (BatteryTextBlock)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Update Battery 2"));
 			if (CurrentLampeTorche != nullptr)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Update Battery 3"));
 				BatteryTextBlock->SetText(FText::FromString(FString::Printf(TEXT("Battery: %.1f%%"), CurrentLampeTorche->BatteryLevel)));
 			}
 		}
