@@ -5,6 +5,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/ActorComponent.h"
+#include "ProceduralMeshComponent.h"
+
 
 // Sets default values
 ALampeTorche::ALampeTorche()
@@ -104,7 +106,7 @@ void ALampeTorche::UpdateBattery()
             LampSpotLight->SetIntensity(0.f);
         }
     }
- }
+}
 
 bool ALampeTorche::IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor)
 {
@@ -116,42 +118,114 @@ bool ALampeTorche::IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor 
     {
         return false;
     }
+    FMeshData MeshData = parent->GetVerticesAndTriangles();
+    UProceduralMeshComponent* NewProceduralMesh = NewObject<UProceduralMeshComponent>(Parent);
 
-    // Récupérer les vertices depuis le HighlightComponent
-    TArray<FVector> Vertices = parent->GetVertices();
-    if (Vertices.Num() == 0)
+    TArray<FVector> Normals;
+    TArray<FVector2D> UVs;
+    TArray<FLinearColor> Colors;
+    TArray<FProcMeshTangent> Tangents;
+
+    FVector LightDirection = LampSpotLight->GetForwardVector();
+
+    FTransform ParentTransform = Parent->GetTransform();
+    FTransform ChildTransform = Child->GetTransform();
+
+    TArray<FVector> VerticesInCone;
+    TArray<int32> TrianglesInCone;
+
+    VerticesInCone.Empty();
+    TrianglesInCone.Empty();
+    bool bFoundTriangleInCone = false;
+    TMap<FVector, int32> VertexIndexMap;
+
+    for (int32 i = 0; i < MeshData.Triangles.Num(); i += 3)
     {
+        int32 Index0 = MeshData.Triangles[i];
+        int32 Index1 = MeshData.Triangles[i + 1];
+        int32 Index2 = MeshData.Triangles[i + 2];
+
+        FVector Vertex0 = MeshData.Vertices[Index0];
+        FVector Vertex1 = MeshData.Vertices[Index1];
+        FVector Vertex2 = MeshData.Vertices[Index2];
+
+        FVector WorldVertex0 = ChildTransform.TransformPosition(Vertex0);
+        FVector WorldVertex1 = ChildTransform.TransformPosition(Vertex1);
+        FVector WorldVertex2 = ChildTransform.TransformPosition(Vertex2);
+
+        bool bVertex0InCone = IsPointInCone(WorldVertex0);
+        bool bVertex1InCone = IsPointInCone(WorldVertex1);
+        bool bVertex2InCone = IsPointInCone(WorldVertex2);
+
+        if (bVertex0InCone || bVertex1InCone || bVertex2InCone)
+        {
+            bFoundTriangleInCone = true;
+            // Ajoute les indices des triangles dans TrianglesInCone dans l'ordre
+            int32 _Index0 = VerticesInCone.Add(Vertex0);
+            int32 _Index1 = VerticesInCone.Add(Vertex1);
+            int32 _Index2 = VerticesInCone.Add(Vertex2);
+
+            // Ajoute les indices dans TrianglesInCone pour former un triangle
+            TrianglesInCone.Add(_Index0);
+            TrianglesInCone.Add(_Index1);
+            TrianglesInCone.Add(_Index2);
+           /* DrawDebugLine(GetWorld(), WorldVertex0, WorldVertex1, FColor::Red, false);
+            DrawDebugLine(GetWorld(), WorldVertex1, WorldVertex2, FColor::Red, false);
+            DrawDebugLine(GetWorld(), WorldVertex2, WorldVertex0, FColor::Red, false);*/
+        }
+    }
+
+    if (!bFoundTriangleInCone)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("False !"));
         return false;
     }
 
-    // Vérifier que l'objet possède la bonne couleur
-    if (RequiredColor != LampSpotLight->LightColor)
+    for (int32 i = 0; i < MeshData.Vertices.Num(); i++)
     {
-        return false;
+        Normals.Add(FVector(0, 0, 1));
+        UVs.Add(FVector2D(0.0f, 0.0f));
+        Colors.Add(FLinearColor::White);
+        Tangents.Add(FProcMeshTangent(FVector(1, 0, 0), false));
     }
+    NewProceduralMesh->ClearAllMeshSections();
+    NewProceduralMesh->CreateMeshSection_LinearColor(
+        0,
+        VerticesInCone,             // Liste des vertices dans le cône
+        TrianglesInCone,            // Triangles à afficher (seulement ceux dans le cône)
+        Normals,                    // Normales
+        UVs,                        // UVs
+        Colors,                     // Couleurs
+        Tangents,                   // Tangentes
+        false,                      // Ne pas calculer les collisions automatiquement
+        false                       // Ne pas effectuer la conversion sRGB
+    );
 
-    // Récupérer la position de la lampe et la direction de la lumière
+    parent->NewMesh = nullptr;
+    parent->SetNewMesh(NewProceduralMesh);
+
+    UE_LOG(LogTemp, Warning, TEXT("True !"));
+    return true;
+}
+
+bool ALampeTorche::IsPointInCone(const FVector& Point)
+{
+    float Length = LampSpotLight->AttenuationRadius;
+    float ConeAngle = LampSpotLight->OuterConeAngle;
     FVector LampPosition = LampSpotLight->GetComponentLocation();
     FVector LampDirection = LampSpotLight->GetForwardVector();
+    FVector DirectionToPoint = (Point - LampPosition).GetSafeNormal();
+    float DotProduct = FVector::DotProduct(LampDirection, DirectionToPoint);
+    float Angle = FMath::Acos(DotProduct) * 180.f / PI;  // Angle en degrés
 
-    for (const FVector& VertexPos : Vertices)
+    if (Angle <= ConeAngle)
     {
-        FVector WorldVertexPos = Child->GetActorTransform().TransformPosition(VertexPos);
-        FVector DirectionToVertex = (WorldVertexPos - LampPosition).GetSafeNormal();
-        float DotProduct = FVector::DotProduct(LampDirection, DirectionToVertex);
-        float Angle = FMath::Acos(DotProduct) * 180.f / PI;
-
-        if (Angle <= ConeAngle)
+        float DistanceToPoint = FVector::Dist(LampPosition, Point);
+        if (DistanceToPoint <= Length)
         {
-            float DistanceToVertex = FVector::Dist(LampPosition, WorldVertexPos);
-            if (DistanceToVertex <= Length)
-            {
-                return true;
-            }
+            return true;
         }
     }
 
     return false;
 }
-
-

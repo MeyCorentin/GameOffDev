@@ -16,7 +16,13 @@
 			"Name": "UMG",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+    			"Name": "ProceduralMeshComponent",
+    			"Type": "Runtime",
+   			 "LoadingPhase": "Default"
 		}
+
 	],
 	"Plugins": [
 		{

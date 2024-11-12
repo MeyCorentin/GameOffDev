@@ -8,6 +8,12 @@
 class AFlashlight;
 class UStaticMeshComponent;
 
+struct FMeshData
+{
+    TArray<FVector> Vertices;
+    TArray<int32> Triangles;
+};
+
 UCLASS()
 class GAMEOFFDEV_API AHighlightableObject : public AActor
 {
@@ -22,13 +28,19 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Color")
     FColor RequiredColor = FColor(255, 255, 255);
 
-    TArray<FVector> GetVertices();
+    FMeshData GetVerticesAndTriangles();
     TArray<FVector> GetVerticesTargetActor();
     TArray<FVector> GetVerticesCurrent();
 
+    UFUNCTION(BlueprintCallable, Category = "Mesh")
+    void SetNewMesh(UProceduralMeshComponent* NewMeshToSet);
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UProceduralMeshComponent* NewMesh;
+
+
 protected:
     // Mesh component representing the visible part of the object
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UStaticMeshComponent* MeshComponent;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -52,4 +64,5 @@ protected:
     FVector GetWorldVertexPosition(int32 LODIndex, int32 VertexIndex) const;
 
     bool isDisplay;
+
 };

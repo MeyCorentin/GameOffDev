@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "LampeTorche.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "ProceduralMeshComponent.h" 
 #include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
@@ -71,24 +72,59 @@ void AHighlightableObject::HandleObjectStatus()
 
 void AHighlightableObject::DisplayObject()
 {
-    if (TargetActor)
+    if (NewMesh)
     {
-        if (!CheckCollisionWithPlayer(TargetActor->FindComponentByClass<UStaticMeshComponent>()))
-        {
-            TargetActor->SetActorHiddenInGame(false);
-            TargetActor->SetActorEnableCollision(true);
-        }
+        UE_LOG(LogTemp, Warning, TEXT("NEwmesh 1"));
+        NewMesh->SetVisibility(true);
+        NewMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     }
-    else
-    {
-        if (!CheckCollisionWithPlayer(MeshComponent))
-        {
-            MeshComponent->SetVisibility(true);
-            MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        }
-    }
+}
 
-    isDisplay = true;
+void AHighlightableObject::SetNewMesh(UProceduralMeshComponent* NewMeshToSet)
+{
+    if (NewMeshToSet)
+    {
+        if (MeshComponent)
+        {
+            // Recherche du premier ProceduralMeshComponent attaché à MeshComponent
+            for (UActorComponent* Component : MeshComponent->GetAttachChildren())
+            {
+                UProceduralMeshComponent* ProceduralMesh = Cast<UProceduralMeshComponent>(Component);
+                if (ProceduralMesh)
+                {
+                    // Si un ProceduralMeshComponent est trouvé, on le détruit
+                    UE_LOG(LogTemp, Warning, TEXT("Destroying attached ProceduralMesh"));
+
+                    ProceduralMesh->DestroyComponent();
+                    break; // On arrête dès qu'on a trouvé et détruit le maillage
+                }
+            }
+        }
+
+        // Assigner le nouveau maillage
+        NewMesh = NewMeshToSet;
+
+        // Attacher le nouveau maillage au MeshComponent (ou au RootComponent si nécessaire)
+        if (MeshComponent)
+        {
+            NewMesh->AttachToComponent(MeshComponent, FAttachmentTransformRules::KeepRelativeTransform);
+        }
+        else
+        {
+            NewMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+        }
+
+        // Réinitialiser la transformation relative
+        NewMesh->SetRelativeTransform(FTransform::Identity);
+
+        // Enregistrer le maillage et le rendre visible dans la scène
+        NewMesh->RegisterComponent();
+        NewMesh->MarkRenderStateDirty();
+
+        // Assurer que le maillage est visible et que la collision est activée
+        NewMesh->SetVisibility(true);
+        NewMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    }
 }
 
 
@@ -139,6 +175,22 @@ bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshCo
 
 void AHighlightableObject::HideObject()
 {
+    if (MeshComponent)
+    {
+        // Recherche du premier ProceduralMeshComponent attaché à MeshComponent
+        for (UActorComponent* Component : MeshComponent->GetAttachChildren())
+        {
+            UProceduralMeshComponent* ProceduralMesh = Cast<UProceduralMeshComponent>(Component);
+            if (ProceduralMesh)
+            {
+                // Si un ProceduralMeshComponent est trouvé, on le détruit
+                UE_LOG(LogTemp, Warning, TEXT("Destroying attached ProceduralMesh"));
+
+                ProceduralMesh->DestroyComponent();
+                break; // On arrête dès qu'on a trouvé et détruit le maillage
+            }
+        }
+    }
     if (TargetActor)
     {
         TargetActor->SetActorHiddenInGame(true);
@@ -160,12 +212,11 @@ void AHighlightableObject::Tick(float DeltaTime)
     HandleObjectStatus();
 }
 
-
-TArray<FVector> AHighlightableObject::GetVertices()
+FMeshData AHighlightableObject::GetVerticesAndTriangles()
 {
+    FMeshData MeshData;
 
     UStaticMeshComponent* TargetMeshComponent;
-
     if (TargetActor)
     {
         TargetMeshComponent = Cast<UStaticMeshComponent>(TargetActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
@@ -174,7 +225,8 @@ TArray<FVector> AHighlightableObject::GetVertices()
     {
         TargetMeshComponent = MeshComponent;
     }
-    TArray<FVector> Vertices;
+
+    TMap<FVector, int32> VertexMap;
     if (TargetMeshComponent && TargetMeshComponent->GetStaticMesh())
     {
         UStaticMesh* StaticMesh = TargetMeshComponent->GetStaticMesh();
@@ -185,13 +237,45 @@ TArray<FVector> AHighlightableObject::GetVertices()
             {
                 const FStaticMeshLODResources& LODResources = RenderData->LODResources[LODIndex];
                 const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
+                const FIndexArrayView& IndexBuffer = LODResources.IndexBuffer.GetArrayView();
+
                 for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
                 {
                     FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
-                    Vertices.Add(VertexPos);
+                    int32 NewIndex = MeshData.Vertices.Add(VertexPos);
+                    VertexMap.Add(VertexPos, NewIndex);
                 }
+
+                const int32 NumIndices = IndexBuffer.Num();
+
+                for (int32 i = 0; i < NumIndices; i += 3)
+                {
+                    if (i + 2 >= NumIndices)
+                    {
+                        break;
+                    }
+
+                    int32 Index0 = IndexBuffer[i];
+                    int32 Index1 = IndexBuffer[i + 1];
+                    int32 Index2 = IndexBuffer[i + 2];
+
+                    if (Index0 < MeshData.Vertices.Num() && Index1 < MeshData.Vertices.Num() && Index2 < MeshData.Vertices.Num())
+                    {
+                        // Vérifier que les indices existent dans VertexMap
+                        if (VertexMap.Contains(MeshData.Vertices[Index0]) &&
+                            VertexMap.Contains(MeshData.Vertices[Index1]) &&
+                            VertexMap.Contains(MeshData.Vertices[Index2]))
+                        {
+                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index0]]);
+                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index1]]);
+                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index2]]);
+                        }
+                    }
+                }
+
             }
         }
     }
-    return Vertices;
+
+    return MeshData;
 }
