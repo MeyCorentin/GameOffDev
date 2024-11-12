@@ -55,6 +55,14 @@ public:
     void UpdateBattery();
 
     bool IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor);
+    FVector GetPointOnConeLimit(const FVector& Point, const FVector& InsidePoint);
+    TArray<FVector> MoveTrianglePointsToConeLimit(
+        const FVector& Point0, const FVector& Point1, const FVector& Point2,
+        const FVector& ConeDirection, float ConeAngle);
+    TArray<bool> CheckPointsInCone(const TArray<FVector>& Points, const FVector& ConeDirection, float ConeAngle);
+    bool IsAllPointsInCone(const TArray<bool>& PointsInCone);
+    int32 FindInsidePointIndex(const TArray<bool>& PointsInCone);
+    FVector MovePointToConeLimit(const FVector& OutsidePoint, const FVector& InsidePoint, const FVector& ConeDirection, float ConeAngle);
     bool IsPointInCone(const FVector& Point);
 };
 

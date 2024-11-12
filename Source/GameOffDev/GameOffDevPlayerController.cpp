@@ -10,3 +10,4 @@ void AGameOffDevPlayerController::BeginPlay()
     bEnableMouseOverEvents = true;
     SetInputMode(FInputModeGameAndUI()); // Permet le contrôle du jeu et de l'UI
 }
+

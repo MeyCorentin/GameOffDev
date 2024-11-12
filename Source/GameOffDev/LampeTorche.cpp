@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Components/ActorComponent.h"
 #include "ProceduralMeshComponent.h"
+#include "Algo/Count.h"
+
 
 
 // Sets default values
@@ -108,6 +110,116 @@ void ALampeTorche::UpdateBattery()
     }
 }
 
+TArray<FVector> ALampeTorche::MoveTrianglePointsToConeLimit(
+    const FVector& Point0, const FVector& Point1, const FVector& Point2,
+    const FVector& ConeDirection, float ConeAngle)
+{
+    TArray<FVector> NewPoints;
+
+    // Liste des points à vérifier
+    TArray<FVector> Points = { Point0, Point1, Point2 };
+
+    // Vérifier si tous les points sont dans le cône
+    TArray<bool> PointsInCone = CheckPointsInCone(Points, ConeDirection, ConeAngle);
+    int32 TrueCount = Algo::Count(PointsInCone, true);
+    if (TrueCount == 3)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("All  Point IN !"));
+        return Points;
+    }
+    if (TrueCount == 1)
+    {
+        for (int32 i = 0; i < Points.Num(); i++)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Move Point 1 !"));
+            if (!PointsInCone[i])
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Move Point 2 !"));
+                int32 InsidePointIndex = FindInsidePointIndex(PointsInCone);
+                FVector InsidePoint = Points[InsidePointIndex];
+                FVector NewPoint = MovePointToConeLimit(Points[i], InsidePoint, ConeDirection, ConeAngle);
+                NewPoints.Add(NewPoint);
+            }
+            else
+            {
+                NewPoints.Add(Points[i]);
+            }
+        }
+        return NewPoints;
+    }
+    UE_LOG(LogTemp, Warning, TEXT("ERROR!"));
+    return Points;
+}
+
+TArray<bool> ALampeTorche::CheckPointsInCone(const TArray<FVector>& Points, const FVector& ConeDirection, float ConeAngle)
+{
+    TArray<bool> PointsInCone;
+
+    FVector LampPosition = LampSpotLight->GetComponentLocation();
+    float Length = LampSpotLight->AttenuationRadius; // Distance maximale
+    float ConeRadius = LampSpotLight->OuterConeAngle; // L'angle du cône
+
+    for (const FVector& Point : Points)
+    {
+        // Calculer la direction vers le point et son angle par rapport à la direction du cône
+        FVector DirectionToPoint = (Point - LampPosition).GetSafeNormal();
+        float DotProduct = FVector::DotProduct(ConeDirection, DirectionToPoint);
+        float Angle = FMath::Acos(DotProduct) * 180.f / PI; // Angle en degrés
+
+        // Vérifier si le point est dans l'angle du cône
+        bool bInConeAngle = Angle <= ConeAngle;
+
+        bool bInConeRange = FVector::Dist(LampPosition, Point) <= Length;
+
+        PointsInCone.Add(bInConeAngle && bInConeRange);
+    }
+
+    return PointsInCone;
+}
+
+
+// Trouver l'indice du premier point qui est à l'intérieur du cône
+int32 ALampeTorche::FindInsidePointIndex(const TArray<bool>& PointsInCone)
+{
+    for (int32 i = 0; i < PointsInCone.Num(); i++)
+    {
+        if (PointsInCone[i])
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+FVector ALampeTorche::MovePointToConeLimit(const FVector& OutsidePoint, const FVector& InsidePoint, const FVector& ConeDirection, float ConeAngle)
+{
+    // Calculer la direction entre les deux points
+    FVector DirectionToInsidePoint = InsidePoint - OutsidePoint;
+
+    // Calculer l'angle entre la direction du cône et la direction du point à l'intérieur du cône
+    float AngleBetween = FMath::Acos(FVector::DotProduct(ConeDirection.GetSafeNormal(), DirectionToInsidePoint.GetSafeNormal()));
+
+    // Si l'angle entre la direction du cône et la direction vers le point extérieur est plus grand que l'angle du cône
+    if (AngleBetween > FMath::DegreesToRadians(ConeAngle))
+    {
+        // Calculer l'angle que le point extérieur doit atteindre pour être sur la limite du cône
+        float AngleToMove = AngleBetween - FMath::DegreesToRadians(ConeAngle);
+
+        // Trouver la direction normalisée du vecteur entre le point extérieur et le point intérieur
+        FVector NormalizedDirection = DirectionToInsidePoint.GetSafeNormal();
+
+        // Déplacer le point vers la limite du cône en ajustant sa distance selon l'angle
+        FVector NewPoint = OutsidePoint + NormalizedDirection * FVector::Dist(OutsidePoint, InsidePoint) * FMath::Cos(AngleToMove);
+
+        return NewPoint;
+    }
+
+    // Si le point est déjà à l'intérieur du cône, ne pas le déplacer
+    return OutsidePoint;
+}
+
+
+
 bool ALampeTorche::IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor)
 {
     float Length = LampSpotLight->AttenuationRadius;
@@ -160,18 +272,23 @@ bool ALampeTorche::IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor 
         if (bVertex0InCone || bVertex1InCone || bVertex2InCone)
         {
             bFoundTriangleInCone = true;
-            // Ajoute les indices des triangles dans TrianglesInCone dans l'ordre
-            int32 _Index0 = VerticesInCone.Add(Vertex0);
-            int32 _Index1 = VerticesInCone.Add(Vertex1);
-            int32 _Index2 = VerticesInCone.Add(Vertex2);
+            TArray<FVector> NewVertices = { WorldVertex0, WorldVertex1, WorldVertex2 };
+            //NewVertices = MoveTrianglePointsToConeLimit(WorldVertex0, WorldVertex1, WorldVertex2, LightDirection, ConeAngle);
 
-            // Ajoute les indices dans TrianglesInCone pour former un triangle
+            // Retirer la transformation du ChildTransform en inversant la transformation
+            FVector LocalVertex0 = ChildTransform.InverseTransformPosition(NewVertices[0]);
+            FVector LocalVertex1 = ChildTransform.InverseTransformPosition(NewVertices[1]);
+            FVector LocalVertex2 = ChildTransform.InverseTransformPosition(NewVertices[2]);
+
+            int32 _Index0 = VerticesInCone.Add(LocalVertex0);
+            int32 _Index1 = VerticesInCone.Add(LocalVertex1);
+            int32 _Index2 = VerticesInCone.Add(LocalVertex2);
+
+            // Ajouter les indices dans TrianglesInCone pour former un triangle
             TrianglesInCone.Add(_Index0);
             TrianglesInCone.Add(_Index1);
             TrianglesInCone.Add(_Index2);
-           /* DrawDebugLine(GetWorld(), WorldVertex0, WorldVertex1, FColor::Red, false);
-            DrawDebugLine(GetWorld(), WorldVertex1, WorldVertex2, FColor::Red, false);
-            DrawDebugLine(GetWorld(), WorldVertex2, WorldVertex0, FColor::Red, false);*/
+
         }
     }
 
