@@ -53,12 +53,10 @@ public:
 
     UFUNCTION()
     void UpdateBattery();
-
+    TArray<FVector> MoveTrianglePointsToConeLimit(const FVector& WorldVertex0, const FVector& WorldVertex1, const FVector& WorldVertex2, const FVector& ConeDirection, float ConeAngle);
+    void ProcessTrianglesInCone(const FVector& WorldVertex0, const FVector& WorldVertex1, const FVector& WorldVertex2, const FVector& LightDirection, float ConeAngle, TArray<FVector>& VerticesInCone, TArray<int32>& TrianglesInCone, const FTransform& ChildTransform);
     bool IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor);
     FVector GetPointOnConeLimit(const FVector& Point, const FVector& InsidePoint);
-    TArray<FVector> MoveTrianglePointsToConeLimit(
-        const FVector& Point0, const FVector& Point1, const FVector& Point2,
-        const FVector& ConeDirection, float ConeAngle);
     TArray<bool> CheckPointsInCone(const TArray<FVector>& Points, const FVector& ConeDirection, float ConeAngle);
     bool IsAllPointsInCone(const TArray<bool>& PointsInCone);
     int32 FindInsidePointIndex(const TArray<bool>& PointsInCone);

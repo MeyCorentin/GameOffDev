@@ -171,7 +171,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	if (bIsDebugModeEnabled == true)
 	{
 		TraceToMouseCursor();
-		DrawDetectionConeToMouse();
+		//DrawDetectionConeToMouse();
 	}
 	UpdateBatteryUI();
 }
