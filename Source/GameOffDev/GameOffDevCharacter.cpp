@@ -494,7 +494,7 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 	float Length = CurrentLampeTorche->LampSpotLight->AttenuationRadius;
 	float ConeAngle = CurrentLampeTorche->LampSpotLight->OuterConeAngle;
 
-	DrawDebugCone(
+	/*DrawDebugCone(
 		GetWorld(),
 		HandPosition,
 		CharacterDirection,
@@ -507,7 +507,7 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 		-1.0f,
 		0,
 		1.0f
-	);
+	);*/
 }
 
 void AGameOffDevCharacter::Look(const FInputActionValue& Value)
