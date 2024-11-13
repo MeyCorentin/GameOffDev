@@ -6,13 +6,15 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "ProceduralMeshComponent.h" 
 #include "Kismet/KismetMathLibrary.h"
+#include "Components/SpotLightComponent.h"
+#include "GameFramework/Actor.h"
+#include "Engine/SpotLight.h" 
 
 // Sets default values
 AHighlightableObject::AHighlightableObject()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Crée le composant de maillage uniquement si aucun TargetActor n'est assigné
     if (!TargetActor)
     {
         MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
@@ -21,30 +23,81 @@ AHighlightableObject::AHighlightableObject()
     isDisplay = false;
 }
 
-bool AHighlightableObject::IsIlluminatedByFlashlight(FColor TargetColor)
+
+bool AHighlightableObject::isIlluminatedBySpotLight()
 {
-    TArray<AActor*> FoundFlashlights;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALampeTorche::StaticClass(), FoundFlashlights);
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
+
     bool isIlluminated = false;
-    for (AActor* FlashlightActor : FoundFlashlights)
+
+    for (AActor* Actor : FoundActors)
     {
-        ALampeTorche* Flashlight = Cast<ALampeTorche>(FlashlightActor);
-        if (TargetActor)
+        USpotLightComponent* SpotLightComponent = Actor->FindComponentByClass<USpotLightComponent>();
+        if (!SpotLightComponent)
         {
-            isIlluminated = Flashlight->IsActorInDetectionCone(this, TargetActor, RequiredColor);
+            continue;
         }
-        else
+
+        FVector LightDirection = SpotLightComponent->GetForwardVector();
+        FVector LightLocation = SpotLightComponent->GetComponentLocation();
+        float Length = SpotLightComponent->AttenuationRadius;
+        float ConeAngle = SpotLightComponent->InnerConeAngle;
+       // DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
+
+        AActor* _actor = (TargetActor) ? TargetActor : this;
+        isIlluminated = IsMeshInCone(_actor, Length, ConeAngle, LightDirection, LightLocation);
+
+        if (isIlluminated && RequiredColor == SpotLightComponent->LightColor)
         {
-            isIlluminated = Flashlight->IsActorInDetectionCone(this, this, RequiredColor);
-        }
-        if (isIlluminated)
             return true;
+        }
     }
+    return false;
+}
+
+bool AHighlightableObject::isIlluminatedByPointLight()
+{
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
+
+    bool isIlluminated = false;
+
+    for (AActor* Actor : FoundActors)
+    {
+        UPointLightComponent* PointLightComponent = Actor->FindComponentByClass<UPointLightComponent>();
+        if (!PointLightComponent)
+        {
+            continue;
+        }
+
+        FVector LightLocation = PointLightComponent->GetComponentLocation();
+        float Radius = PointLightComponent->Intensity * 50;
+        // DrawDebugSphere(GetWorld(), LightLocation, Radius, 12, FColor::Yellow, false, 0.1f);
+        float distance = FVector::Dist(LightLocation, _actor->GetActorLocation());
+        if (distance <= Radius &&   RequiredColor.R == PointLightComponent->LightColor.R &&
+                                            RequiredColor.G == PointLightComponent->LightColor.G &&
+                                            RequiredColor.B == PointLightComponent->LightColor.B)
+        {
+            isIlluminated = true;
+            break;
+        }
+    }
+
+    return isIlluminated;
+}
+
+bool AHighlightableObject::isIlluminated()
+{
+    bool bIlluminatedBySpotLight = isIlluminatedBySpotLight();
+    bool bIlluminatedByPointLight = isIlluminatedByPointLight();
+    if (bIlluminatedBySpotLight || bIlluminatedByPointLight)
+        return true;
 
     return false;
 }
 
-
+    
 bool AHighlightableObject::getDisplayStatus()
 {
     return isDisplay;
@@ -53,14 +106,7 @@ bool AHighlightableObject::getDisplayStatus()
 
 void AHighlightableObject::HandleObjectStatus()
 {
-    ALampeTorche* Flashlight = nullptr;
-    for (TActorIterator<ALampeTorche> It(GetWorld()); It; ++It)
-    {
-        Flashlight = *It;
-        break;
-    }
-
-    if (Flashlight && IsIlluminatedByFlashlight(RequiredColor))
+    if (isIlluminated())
     {
         DisplayObject();
     }
@@ -91,55 +137,6 @@ void AHighlightableObject::DisplayObject()
 
     isDisplay = true;
 }
-
-
-void AHighlightableObject::SetNewMesh(UProceduralMeshComponent* NewMeshToSet)
-{
-    if (NewMeshToSet)
-    {
-        if (MeshComponent)
-        {
-            // Recherche du premier ProceduralMeshComponent attaché à MeshComponent
-            for (UActorComponent* Component : MeshComponent->GetAttachChildren())
-            {
-                UProceduralMeshComponent* ProceduralMesh = Cast<UProceduralMeshComponent>(Component);
-                if (ProceduralMesh)
-                {
-                    // Si un ProceduralMeshComponent est trouvé, on le détruit
-                    UE_LOG(LogTemp, Warning, TEXT("Destroying attached ProceduralMesh"));
-
-                    ProceduralMesh->DestroyComponent();
-                    break; // On arrête dès qu'on a trouvé et détruit le maillage
-                }
-            }
-        }
-
-        // Assigner le nouveau maillage
-        NewMesh = NewMeshToSet;
-
-        // Attacher le nouveau maillage au MeshComponent (ou au RootComponent si nécessaire)
-        if (MeshComponent)
-        {
-            NewMesh->AttachToComponent(MeshComponent, FAttachmentTransformRules::KeepRelativeTransform);
-        }
-        else
-        {
-            NewMesh->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-        }
-
-        // Réinitialiser la transformation relative
-        NewMesh->SetRelativeTransform(FTransform::Identity);
-
-        // Enregistrer le maillage et le rendre visible dans la scène
-        NewMesh->RegisterComponent();
-        NewMesh->MarkRenderStateDirty();
-
-        // Assurer que le maillage est visible et que la collision est activée
-        NewMesh->SetVisibility(true);
-        NewMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    }
-}
-
 
 bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshComponentToTest)
 {
@@ -188,22 +185,6 @@ bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshCo
 
 void AHighlightableObject::HideObject()
 {
-    if (MeshComponent)
-    {
-        // Recherche du premier ProceduralMeshComponent attaché à MeshComponent
-        for (UActorComponent* Component : MeshComponent->GetAttachChildren())
-        {
-            UProceduralMeshComponent* ProceduralMesh = Cast<UProceduralMeshComponent>(Component);
-            if (ProceduralMesh)
-            {
-                // Si un ProceduralMeshComponent est trouvé, on le détruit
-                UE_LOG(LogTemp, Warning, TEXT("Destroying attached ProceduralMesh"));
-
-                ProceduralMesh->DestroyComponent();
-                break; // On arrête dès qu'on a trouvé et détruit le maillage
-            }
-        }
-    }
     if (TargetActor)
     {
         TargetActor->SetActorHiddenInGame(true);
@@ -225,74 +206,48 @@ void AHighlightableObject::Tick(float DeltaTime)
     HandleObjectStatus();
 }
 
-FMeshData AHighlightableObject::GetVerticesAndTriangles()
+
+
+bool AHighlightableObject::IsMeshInCone(AActor* actor, float Length, float ConeAngle, FVector LightDirection, FVector LightLocation)
 {
-    FMeshData MeshData;
 
-    UStaticMeshComponent* TargetMeshComponent;
-    if (TargetActor)
+    bool bFoundTriangleInCone = false;
+    AHighlightableObject* _actor = Cast<AHighlightableObject>(actor);
+    if (!_actor)
     {
-        TargetMeshComponent = Cast<UStaticMeshComponent>(TargetActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+        return false;
     }
-    else
+    TArray<FVector>  Vertices = _actor->GetVertices();
+    for (int32 i = 0; i < Vertices.Num(); i += 1)
     {
-        TargetMeshComponent = MeshComponent;
-    }
-
-    TMap<FVector, int32> VertexMap;
-    if (TargetMeshComponent && TargetMeshComponent->GetStaticMesh())
-    {
-        UStaticMesh* StaticMesh = TargetMeshComponent->GetStaticMesh();
-        FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
-        if (RenderData)
+        FVector Vertex0 = Vertices[i];
+        FVector WorldVertex0 = _actor->GetTransform().TransformPosition(Vertex0);
+        bool bVertex0InCone = IsPointInCone(WorldVertex0, Length, ConeAngle, LightDirection, LightLocation);
+        if (bVertex0InCone )
         {
-            for (int32 LODIndex = 0; LODIndex < RenderData->LODResources.Num(); ++LODIndex)
-            {
-                const FStaticMeshLODResources& LODResources = RenderData->LODResources[LODIndex];
-                const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
-                const FIndexArrayView& IndexBuffer = LODResources.IndexBuffer.GetArrayView();
+            return true;
+        }
+    }
+    return false;
+}
 
-                for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
-                {
-                    FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
-                    int32 NewIndex = MeshData.Vertices.Add(VertexPos);
-                    VertexMap.Add(VertexPos, NewIndex);
-                }
+bool AHighlightableObject::IsPointInCone(const FVector& Point,  float Length, float ConeAngle, FVector LightDirection, FVector LightLocation)
+{
+    FVector DirectionToPoint = (Point - LightLocation).GetSafeNormal();
+    float DotProduct = FVector::DotProduct(LightDirection, DirectionToPoint);
+    float Angle = FMath::Acos(DotProduct) * 180.f / PI;  // Angle en degrés
 
-                const int32 NumIndices = IndexBuffer.Num();
-
-                for (int32 i = 0; i < NumIndices; i += 3)
-                {
-                    if (i + 2 >= NumIndices)
-                    {
-                        break;
-                    }
-
-                    int32 Index0 = IndexBuffer[i];
-                    int32 Index1 = IndexBuffer[i + 1];
-                    int32 Index2 = IndexBuffer[i + 2];
-
-                    if (Index0 < MeshData.Vertices.Num() && Index1 < MeshData.Vertices.Num() && Index2 < MeshData.Vertices.Num())
-                    {
-                        // Vérifier que les indices existent dans VertexMap
-                        if (VertexMap.Contains(MeshData.Vertices[Index0]) &&
-                            VertexMap.Contains(MeshData.Vertices[Index1]) &&
-                            VertexMap.Contains(MeshData.Vertices[Index2]))
-                        {
-                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index0]]);
-                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index1]]);
-                            MeshData.Triangles.Add(VertexMap[MeshData.Vertices[Index2]]);
-                        }
-                    }
-                }
-
-            }
+    if (Angle <= ConeAngle)
+    {
+        float DistanceToPoint = FVector::Dist(LightLocation, Point);
+        if (DistanceToPoint <= Length)
+        {
+            return true;
         }
     }
 
-    return MeshData;
+    return false;
 }
-
 
 TArray<FVector> AHighlightableObject::GetVertices()
 {

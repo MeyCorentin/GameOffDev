@@ -53,8 +53,5 @@ public:
 
     UFUNCTION()
     void UpdateBattery();
-
-    bool IsActorInDetectionCone(AActor* Parent, AActor* Child, FColor RequiredColor);
-    bool IsPointInCone(const FVector& Point);
 };
 
