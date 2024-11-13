@@ -126,5 +126,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
 	TSubclassOf<AActor> DoorClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
+	TSubclassOf<AActor> KeyClass;
 };
 

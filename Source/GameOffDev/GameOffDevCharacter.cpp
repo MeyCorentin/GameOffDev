@@ -278,6 +278,10 @@ void AGameOffDevCharacter::Interact()
 					}
 					break;
 				}
+				if (HitActor->IsA(KeyClass) && Distance <= 100 && !bIsPushingOrPulling)  // Si c'est la clé
+				{
+					HitActor->Destroy();
+				}
 			}
 		}
 	}
