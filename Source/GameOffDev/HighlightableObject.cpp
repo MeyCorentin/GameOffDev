@@ -9,6 +9,7 @@
 #include "Components/SpotLightComponent.h"
 #include "GameFramework/Actor.h"
 #include "Engine/SpotLight.h" 
+#include "Engine/PointLight.h"
 
 // Sets default values
 AHighlightableObject::AHighlightableObject()
@@ -23,7 +24,6 @@ AHighlightableObject::AHighlightableObject()
     isDisplay = false;
 }
 
-
 bool AHighlightableObject::isIlluminatedBySpotLight()
 {
     TArray<AActor*> FoundActors;
@@ -33,8 +33,20 @@ bool AHighlightableObject::isIlluminatedBySpotLight()
 
     for (AActor* Actor : FoundActors)
     {
+        if (!Actor)
+        {
+            continue;
+        }
+
         USpotLightComponent* SpotLightComponent = Actor->FindComponentByClass<USpotLightComponent>();
         if (!SpotLightComponent)
+        {
+            continue;
+        }
+
+        if (RequiredColor.R != SpotLightComponent->LightColor.R ||
+            RequiredColor.G != SpotLightComponent->LightColor.G ||
+            RequiredColor.B != SpotLightComponent->LightColor.B)
         {
             continue;
         }
@@ -43,17 +55,20 @@ bool AHighlightableObject::isIlluminatedBySpotLight()
         FVector LightLocation = SpotLightComponent->GetComponentLocation();
         float Length = SpotLightComponent->AttenuationRadius;
         float ConeAngle = SpotLightComponent->InnerConeAngle;
-       // DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
+
+
+        //DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
 
         AActor* _actor = (TargetActor) ? TargetActor : this;
         isIlluminated = IsMeshInCone(_actor, Length, ConeAngle, LightDirection, LightLocation);
 
-        if (isIlluminated && RequiredColor == SpotLightComponent->LightColor)
+        if (isIlluminated)
         {
-            return true;
+            break;  
         }
     }
-    return false;
+
+    return isIlluminated;
 }
 
 bool AHighlightableObject::isIlluminatedByPointLight()
@@ -65,21 +80,43 @@ bool AHighlightableObject::isIlluminatedByPointLight()
 
     for (AActor* Actor : FoundActors)
     {
+        // Vérifie que l'acteur est bien un PointLight
+        if (!Actor->IsA(APointLight::StaticClass()))
+        {
+            continue;
+        }
+
         UPointLightComponent* PointLightComponent = Actor->FindComponentByClass<UPointLightComponent>();
-        if (!PointLightComponent)
+        if (!PointLightComponent ||
+            RequiredColor.R != PointLightComponent->LightColor.R ||
+            RequiredColor.G != PointLightComponent->LightColor.G ||
+            RequiredColor.B != PointLightComponent->LightColor.B)
         {
             continue;
         }
 
         FVector LightLocation = PointLightComponent->GetComponentLocation();
-        float Radius = PointLightComponent->Intensity * 50;
-        // DrawDebugSphere(GetWorld(), LightLocation, Radius, 12, FColor::Yellow, false, 0.1f);
-        float distance = FVector::Dist(LightLocation, _actor->GetActorLocation());
-        if (distance <= Radius &&   RequiredColor.R == PointLightComponent->LightColor.R &&
-                                            RequiredColor.G == PointLightComponent->LightColor.G &&
-                                            RequiredColor.B == PointLightComponent->LightColor.B)
+        float Radius = PointLightComponent->AttenuationRadius;
+
+        // Dessine la sphère pour visualiser la zone d'illumination
+        //DrawDebugSphere(GetWorld(), LightLocation, Radius, 12, FColor::Yellow, false, 0.1f);
+        TArray<FVector> Vertices = GetVertices();
+
+        for (const FVector& Vertex : Vertices)
         {
-            isIlluminated = true;
+
+            FVector WorldVertex0 = this->GetTransform().TransformPosition(Vertex);
+            if (TargetActor != nullptr)
+                WorldVertex0 = TargetActor->GetTransform().TransformPosition(Vertex);
+            float distance = FVector::Dist(LightLocation, WorldVertex0);
+            if (distance <= Radius)
+            {
+                return true;
+            }
+        }
+
+        if (isIlluminated)
+        {
             break;
         }
     }
@@ -87,11 +124,13 @@ bool AHighlightableObject::isIlluminatedByPointLight()
     return isIlluminated;
 }
 
+
+
 bool AHighlightableObject::isIlluminated()
 {
     bool bIlluminatedBySpotLight = isIlluminatedBySpotLight();
     bool bIlluminatedByPointLight = isIlluminatedByPointLight();
-    if (bIlluminatedBySpotLight || bIlluminatedByPointLight)
+    if (bIlluminatedBySpotLight == true || bIlluminatedByPointLight == true)
         return true;
 
     return false;
@@ -191,11 +230,12 @@ void AHighlightableObject::HideObject()
         TargetActor->SetActorEnableCollision(false);
         TargetActor->SetHidden(true);
     }
-    else
-    {
+    else {
         MeshComponent->SetVisibility(false);
         MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     }
+
+    
 
     isDisplay = false;
 }
@@ -212,16 +252,11 @@ bool AHighlightableObject::IsMeshInCone(AActor* actor, float Length, float ConeA
 {
 
     bool bFoundTriangleInCone = false;
-    AHighlightableObject* _actor = Cast<AHighlightableObject>(actor);
-    if (!_actor)
-    {
-        return false;
-    }
-    TArray<FVector>  Vertices = _actor->GetVertices();
+    TArray<FVector>  Vertices = GetVertices();
     for (int32 i = 0; i < Vertices.Num(); i += 1)
     {
         FVector Vertex0 = Vertices[i];
-        FVector WorldVertex0 = _actor->GetTransform().TransformPosition(Vertex0);
+        FVector WorldVertex0 = actor->GetTransform().TransformPosition(Vertex0);
         bool bVertex0InCone = IsPointInCone(WorldVertex0, Length, ConeAngle, LightDirection, LightLocation);
         if (bVertex0InCone )
         {
