@@ -48,6 +48,7 @@ void AGameOffDevCharacter::TraceToMouseCursor()
 
 	}
 }
+
 FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -239,8 +240,50 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::DropObject);
+		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Interact);
+
 	}
 }
+
+
+void AGameOffDevCharacter::Interact()
+{
+	FVector MouseWorldLocation = GetMouseWorldLocation();  // Obtenir la position de la souris dans le monde
+	FVector PlayerLocation = GetActorLocation();
+
+	if (MouseWorldLocation != FVector::ZeroVector)
+	{
+		// Crée une sphere overlap à la position de la souris pour détecter les objets autour
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+
+		// Vérification de l'overlap sur un rayon autour de la souris
+		TArray<FHitResult> HitResults;
+
+		// Utilisation d'une sphere pour rechercher des objets autour de la position de la souris
+		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
+
+		if (bHit)
+		{
+			for (FHitResult& Hit : HitResults)
+			{
+				AActor* HitActor = Hit.GetActor();
+				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
+				if (HitActor && HitActor->IsA(DoorClass) && Distance <= 100 && !bIsPushingOrPulling) // Si c'est un BP_Door
+				{
+					UFunction* OpenDoorFunction = HitActor->FindFunction(TEXT("OpenDoor"));
+					if (OpenDoorFunction)
+					{
+						HitActor->ProcessEvent(OpenDoorFunction, nullptr);
+					}
+					break;
+				}
+			}
+		}
+	}
+}
+
+
 
 void AGameOffDevCharacter::DropObject()
 {

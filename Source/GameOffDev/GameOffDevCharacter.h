@@ -56,6 +56,9 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DropAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InteractionAction;
+
 public:
 
 	AGameOffDevCharacter();
@@ -116,5 +119,12 @@ protected:
 	void DropObject();
 
 	void UpdateBatteryUI();
+
+	void PauseGame();
+
+	void Interact();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
+	TSubclassOf<AActor> DoorClass;
 };
 
