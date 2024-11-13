@@ -36,6 +36,7 @@ public:
     void SetNewMesh(UProceduralMeshComponent* NewMeshToSet);
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UProceduralMeshComponent* NewMesh;
+    TArray<FVector> GetVertices();
 
 
 protected:

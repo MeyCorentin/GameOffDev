@@ -72,13 +72,26 @@ void AHighlightableObject::HandleObjectStatus()
 
 void AHighlightableObject::DisplayObject()
 {
-    if (NewMesh)
+    if (TargetActor)
     {
-        UE_LOG(LogTemp, Warning, TEXT("NEwmesh 1"));
-        NewMesh->SetVisibility(true);
-        NewMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        if (!CheckCollisionWithPlayer(TargetActor->FindComponentByClass<UStaticMeshComponent>()))
+        {
+            TargetActor->SetActorHiddenInGame(false);
+            TargetActor->SetActorEnableCollision(true);
+        }
     }
+    else
+    {
+        if (!CheckCollisionWithPlayer(MeshComponent))
+        {
+            MeshComponent->SetVisibility(true);
+            MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        }
+    }
+
+    isDisplay = true;
 }
+
 
 void AHighlightableObject::SetNewMesh(UProceduralMeshComponent* NewMeshToSet)
 {
@@ -278,4 +291,40 @@ FMeshData AHighlightableObject::GetVerticesAndTriangles()
     }
 
     return MeshData;
+}
+
+
+TArray<FVector> AHighlightableObject::GetVertices()
+{
+
+    UStaticMeshComponent* TargetMeshComponent;
+
+    if (TargetActor)
+    {
+        TargetMeshComponent = Cast<UStaticMeshComponent>(TargetActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+    }
+    else
+    {
+        TargetMeshComponent = MeshComponent;
+    }
+    TArray<FVector> Vertices;
+    if (TargetMeshComponent && TargetMeshComponent->GetStaticMesh())
+    {
+        UStaticMesh* StaticMesh = TargetMeshComponent->GetStaticMesh();
+        FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
+        if (RenderData)
+        {
+            for (int32 LODIndex = 0; LODIndex < RenderData->LODResources.Num(); ++LODIndex)
+            {
+                const FStaticMeshLODResources& LODResources = RenderData->LODResources[LODIndex];
+                const FPositionVertexBuffer& VertexBuffer = LODResources.VertexBuffers.PositionVertexBuffer;
+                for (uint32 i = 0; i < VertexBuffer.GetNumVertices(); ++i)
+                {
+                    FVector VertexPos = FVector(VertexBuffer.VertexPosition(i).X, VertexBuffer.VertexPosition(i).Y, VertexBuffer.VertexPosition(i).Z);
+                    Vertices.Add(VertexPos);
+                }
+            }
+        }
+    }
+    return Vertices;
 }
