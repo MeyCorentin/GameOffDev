@@ -287,7 +287,6 @@ void AGameOffDevCharacter::Interact()
 					UFunction* OpenCurtainFunction = HitActor->FindFunction(TEXT("OpenCurtain"));
 					if (OpenCurtainFunction)
 					{
-						UE_LOG(LogTemp, Warning, TEXT("CURTAIN F"));
 						HitActor->ProcessEvent(OpenCurtainFunction, nullptr);
 					}
 				}
