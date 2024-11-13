@@ -282,6 +282,15 @@ void AGameOffDevCharacter::Interact()
 				{
 					HitActor->Destroy();
 				}
+				if (HitActor->IsA(CurtainClass) && Distance <= 100 && !bIsPushingOrPulling)  // Si c'est la clé
+				{
+					UFunction* OpenCurtainFunction = HitActor->FindFunction(TEXT("OpenCurtain"));
+					if (OpenCurtainFunction)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CURTAIN F"));
+						HitActor->ProcessEvent(OpenCurtainFunction, nullptr);
+					}
+				}
 			}
 		}
 	}
