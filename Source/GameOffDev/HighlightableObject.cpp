@@ -10,6 +10,7 @@
 #include "GameFramework/Actor.h"
 #include "Engine/SpotLight.h" 
 #include "Engine/PointLight.h"
+#include "LampeTorche.h"
 
 // Sets default values
 AHighlightableObject::AHighlightableObject()
@@ -78,14 +79,9 @@ bool AHighlightableObject::isIlluminatedByPointLight()
 
     bool isIlluminated = false;
 
+
     for (AActor* Actor : FoundActors)
     {
-        // Vérifie que l'acteur est bien un PointLight
-        if (!Actor->IsA(APointLight::StaticClass()))
-        {
-            continue;
-        }
-
         UPointLightComponent* PointLightComponent = Actor->FindComponentByClass<UPointLightComponent>();
         if (!PointLightComponent ||
             RequiredColor.R != PointLightComponent->LightColor.R ||
@@ -94,12 +90,13 @@ bool AHighlightableObject::isIlluminatedByPointLight()
         {
             continue;
         }
-
+        
+        if (Actor->IsA(ASpotLight::StaticClass()) || Actor->IsA(ALampeTorche::StaticClass()))
+        {
+            continue;
+        }
         FVector LightLocation = PointLightComponent->GetComponentLocation();
         float Radius = PointLightComponent->AttenuationRadius;
-
-        // Dessine la sphère pour visualiser la zone d'illumination
-        //DrawDebugSphere(GetWorld(), LightLocation, Radius, 12, FColor::Yellow, false, 0.1f);
         TArray<FVector> Vertices = GetVertices();
 
         for (const FVector& Vertex : Vertices)

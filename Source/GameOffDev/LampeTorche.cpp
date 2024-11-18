@@ -66,30 +66,41 @@ void ALampeTorche::Charge(float energy)
 
 void ALampeTorche::ChangeColor(int32 ColorCode)
 {
+    // Vérifiez que ColorCode est valide
+    if (ColorCode < 1 || ColorCode > _ColorFilter.Num())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
+        return;
+    }
+
     switch (ColorCode)
     {
-    case 1:
-        LampSpotLight->SetLightColor(FLinearColor::Red);
-        break;
-    case 2:
-        LampSpotLight->SetLightColor(FLinearColor::Green);
-        break;
-    case 3:
-        LampSpotLight->SetLightColor(FLinearColor::Blue);
-        break;
-    default:
-        //UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
-        break;
+        case 1:
+            if (_ColorFilter[0])
+                LampSpotLight->SetLightColor(FLinearColor::Red);
+            break;
+        case 2:
+            if (_ColorFilter[1])
+                LampSpotLight->SetLightColor(FLinearColor::Green);
+            break;
+        case 3:
+            if (_ColorFilter[2])
+                LampSpotLight->SetLightColor(FLinearColor::Blue);
+            break;
+        default:
+            break;
     }
 }
 
-void ALampeTorche::AttachToPlayer(USkeletalMeshComponent* PlayerMesh)
+void ALampeTorche::PicktupColor(int32 FilterValue)
 {
-    if (PlayerMesh)
+    if (FilterValue >= 0 && FilterValue < _ColorFilter.Num())
     {
-        AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, "HandSocket");
+        _ColorFilter[FilterValue] = true;
     }
 }
+
+
 
 void ALampeTorche::UpdateBattery()
 {

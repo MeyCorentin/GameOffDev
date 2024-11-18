@@ -43,8 +43,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp Battery")
     float LightIntensityFactor;
 
-    void AttachToPlayer(class USkeletalMeshComponent* PlayerMesh);
-
     void ChangeColor(int32 ColorCode);
 
     void Charge(float energy);
@@ -53,5 +51,9 @@ public:
 
     UFUNCTION()
     void UpdateBattery();
+
+    void PicktupColor(int32 FilterValue);
+
+    TArray<bool> _ColorFilter = { false, false, false };
 };
 

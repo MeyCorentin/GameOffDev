@@ -10,6 +10,7 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "LampeTorche.h"
+#include "ColorFilter.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
@@ -135,7 +136,7 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 		USkeletalMeshComponent* PlayerMesh = GetMesh();
 		if (PlayerMesh)
 		{
-			LampeTorche->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("ik_hand_rSocket"));
+			LampeTorche->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("RightHandIndex4Socket"));
 		}
 
 		LampeTorche->SetActorEnableCollision(false);
@@ -290,6 +291,17 @@ void AGameOffDevCharacter::Interact()
 						HitActor->ProcessEvent(OpenCurtainFunction, nullptr);
 					}
 				}
+				if (HitActor->IsA(AColorFilter::StaticClass()) && Distance <= 100 && !bIsPushingOrPulling)
+				{
+					AColorFilter* Filter = Cast<AColorFilter>(HitActor);
+					if (Filter && CurrentLampeTorche != nullptr)
+					{
+						int32 FilterValue = Filter->Value;
+						if (FilterValue >= 0 && FilterValue < CurrentLampeTorche->_ColorFilter.Num())
+							CurrentLampeTorche->PicktupColor(FilterValue);
+						Filter->Destroy();
+					}
+				}
 			}
 		}
 	}
@@ -311,6 +323,7 @@ void AGameOffDevCharacter::SwitchColorWithArgs(const FInputActionValue& Value, c
 {
 	if (bEnable)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Color %i"), ColorIndex);
 		SwitchColor(ColorIndex); 
 	}
 }

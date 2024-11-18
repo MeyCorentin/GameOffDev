@@ -13,6 +13,10 @@ class AGameOffDevGameMode : public AGameModeBase
 
 public:
 	AGameOffDevGameMode();
+	void CheckLightsAndReturnToTitle();
+	void BeginPlay();
+
+	FTimerHandle CheckLightsTimerHandle;
 };
 
 
