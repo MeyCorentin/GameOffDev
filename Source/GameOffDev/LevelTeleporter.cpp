@@ -40,14 +40,13 @@ bool ALevelTeleporter::CheckCollisionWithPlayer()
     }
     return false;
 }
-
 void ALevelTeleporter::LoadLevel(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
     bool bFromSweep, const FHitResult& SweepResult)
 {
     if (!OtherActor || OtherActor != GetWorld()->GetFirstPlayerController()->GetPawn())
     {
-        return; // Ignorer si ce n'est pas le joueur
+        return;
     }
 
     if (LevelToLoad.IsNone())
@@ -56,6 +55,15 @@ void ALevelTeleporter::LoadLevel(UPrimitiveComponent* OverlappedComponent, AActo
         return;
     }
 
-    // Charge le niveau spécifié
-    UGameplayStatics::OpenLevel(this, LevelToLoad);
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+    if (PlayerController)
+    {
+        PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
+
+        FTimerHandle TimerHandle;
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+            {
+                UGameplayStatics::OpenLevel(this, LevelToLoad);
+            }, 1.0f, false);
+    }
 }
