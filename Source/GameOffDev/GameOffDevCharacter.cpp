@@ -137,6 +137,7 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 		if (PlayerMesh)
 		{
 			LampeTorche->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("RightHandIndex4Socket"));
+			LampeTorche->SetActorScale3D(LampeTorche->GetActorScale3D() * 3.0f);
 		}
 
 		LampeTorche->SetActorEnableCollision(false);
