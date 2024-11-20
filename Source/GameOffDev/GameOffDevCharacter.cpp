@@ -154,7 +154,6 @@ void AGameOffDevCharacter::FaceMouseCursor()
 		FRotator NewRotation = Direction.Rotation();
 		NewRotation.Pitch = 0.0f;
 		NewRotation.Roll = 0.0f;
-		NewRotation.Yaw -= 90.0f;
 
 		SetActorRotation(NewRotation);
 	}
