@@ -23,4 +23,11 @@ public:
 
     UPROPERTY(VisibleAnywhere)
     UStaticMeshComponent* Mesh;
+
+    UFUNCTION(BlueprintCallable, Category = "Display")
+    FText GetDisplayText() const;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DisplayText")
+    FText DisplayText;
 };
+

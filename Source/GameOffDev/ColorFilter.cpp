@@ -12,6 +12,7 @@ AColorFilter::AColorFilter()
 	// Initialiser la boîte poussable avec un StaticMeshComponent
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
+	DisplayText = FText::FromString(TEXT("[FILTER] Can be picked up... I don't know why..."));
 }
 
 // Called when the game starts or when spawned
@@ -26,5 +27,10 @@ void AColorFilter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+FText AColorFilter::GetDisplayText() const
+{
+	return DisplayText;
 }
 

@@ -205,6 +205,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 		DrawDetectionConeToMouse();
 	}
 	UpdateBatteryUI();
+	UpdateInfoBox();
 }
 
 void AGameOffDevCharacter::BeginPlay()
@@ -275,6 +276,96 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	}
 }
+
+
+
+void AGameOffDevCharacter::UpdateInfoBox()
+{
+	FVector MouseWorldLocation = GetMouseWorldLocation();
+	FVector PlayerLocation = GetActorLocation();
+	UTextBlock* InfoBox = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("InfoBox"));
+
+	if (MouseWorldLocation != FVector::ZeroVector)
+	{
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+
+		TArray<FHitResult> HitResults;
+		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
+
+		InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+		if (bHit)
+		{
+			for (FHitResult& Hit : HitResults)
+			{
+				AActor* HitActor = Hit.GetActor();
+				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
+				if (HitActor && Distance <= 100)
+				{
+					if (HitActor->IsA(DoorClass))
+					{
+						FText DisplayText;
+						FName VariableName(TEXT("DisplayText"));
+
+						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						{
+							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+							if (TextProperty)
+							{
+								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+								InfoBox->SetText(DisplayText);
+							}
+						}
+					}
+					if (HitActor->IsA(KeyClass))
+					{
+						FText DisplayText;
+						FName VariableName(TEXT("DisplayText"));
+
+						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						{
+							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+							if (TextProperty)
+							{
+								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+								InfoBox->SetText(DisplayText);
+							}
+						}
+					}
+					if (HitActor->IsA(CurtainClass))
+					{
+						FText DisplayText;
+						FName VariableName(TEXT("DisplayText"));
+
+						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						{
+							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+							if (TextProperty)
+							{
+								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+								InfoBox->SetText(DisplayText);
+							}
+						}
+					}
+					if (HitActor->IsA(AColorFilter::StaticClass()))
+					{
+						AColorFilter* ColorFilterActor = Cast<AColorFilter>(HitActor);
+						if (ColorFilterActor)
+						{
+							FText DisplayText = ColorFilterActor->GetDisplayText();
+							InfoBox->SetText(DisplayText);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 
 
 void AGameOffDevCharacter::Interact()

@@ -43,6 +43,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp Battery")
     float LightIntensityFactor;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp Color")
+    int DefaultColor;
+
     void ChangeColor(int32 ColorCode);
 
     void Charge(float energy);

@@ -22,6 +22,7 @@ ALampeTorche::ALampeTorche()
     LampSpotLight->SetIntensity(100000.f);
     LampSpotLight->SetLightColor(FLinearColor::White);
     LampSpotLight->SetAttenuationRadius(5000.f);
+    _ColorFilter[DefaultColor] = true;
 }
 
 void ALampeTorche::BeginPlay()
@@ -75,21 +76,25 @@ void ALampeTorche::ChangeColor(int32 ColorCode)
 
     switch (ColorCode)
     {
-        case 1:
-            if (_ColorFilter[0])
-                LampSpotLight->SetLightColor(FLinearColor::Red);
-            break;
-        case 2:
-            if (_ColorFilter[1])
-                LampSpotLight->SetLightColor(FLinearColor::Green);
-            break;
-        case 3:
-            if (_ColorFilter[2])
-                LampSpotLight->SetLightColor(FLinearColor::Blue);
-            break;
-        default:
-            break;
+    case 1:
+        if (_ColorFilter[0])
+            LampSpotLight->SetLightColor(FLinearColor::Red);
+        break;
+
+    case 2:
+        if (_ColorFilter[1])
+            LampSpotLight->SetLightColor(FLinearColor::Green);
+        break;
+
+    case 3:
+        if (_ColorFilter[2])
+            LampSpotLight->SetLightColor(FLinearColor::Blue);
+        break;
+
+    default:
+        break;
     }
+
 }
 
 void ALampeTorche::PicktupColor(int32 FilterValue)

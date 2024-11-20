@@ -8,6 +8,7 @@
 #include "LampeTorche.h"
 #include "Battery.h"
 #include "PoussableBox.h"
+#include "Blueprint/UserWidget.h"
 #include "HighlightableObject.h"
 #include "GameOffDevCharacter.generated.h"
 
@@ -127,6 +128,8 @@ protected:
 	void Interact();
 
 	void RemapInputsForKeyboardLayout();
+
+	void UpdateInfoBox();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;
