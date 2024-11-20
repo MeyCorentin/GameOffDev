@@ -60,6 +60,9 @@ class AGameOffDevCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* InteractionAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* WheelAction;
+
 public:
 
 	AGameOffDevCharacter();
@@ -84,8 +87,16 @@ public:
 
 	UUserWidget* BatteryWidgetInstance;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UUserWidget> ColorWheelWidgetClass;
+	UUserWidget* ColorWheelWidget;
+
 	UFUNCTION(BlueprintCallable, Category = "Mouse Control")
 	FVector GetMouseWorldLocation() const;
+
+	void ShowColorWheel();
+
+	void HideColorWheel();
 protected:
 
 

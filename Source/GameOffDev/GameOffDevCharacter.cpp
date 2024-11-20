@@ -220,6 +220,10 @@ void AGameOffDevCharacter::BeginPlay()
 			BatteryWidgetInstance->AddToViewport();
 		}
 	}
+	if (ColorWheelWidgetClass)
+	{
+		ColorWheelWidget = CreateWidget<UUserWidget>(GetWorld(), ColorWheelWidgetClass);
+	}
 }
 
 void AGameOffDevCharacter::UpdateBatteryUI()
@@ -274,9 +278,35 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::DropObject);
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Interact);
 
+		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ShowColorWheel);
+		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::HideColorWheel);
+		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Canceled, this, &AGameOffDevCharacter::HideColorWheel);
+
 	}
 }
 
+void AGameOffDevCharacter::ShowColorWheel()
+{
+	if (ColorWheelWidget && !ColorWheelWidget->IsInViewport())
+	{
+		ColorWheelWidget->AddToViewport();
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->bShowMouseCursor = true;
+		}
+	}
+}
+
+void AGameOffDevCharacter::HideColorWheel()
+{
+	if (ColorWheelWidget && ColorWheelWidget->IsInViewport())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hide color wheel"));
+		ColorWheelWidget->RemoveFromViewport();
+		ColorWheelWidget->RemoveFromParent();
+	}
+}
 
 
 void AGameOffDevCharacter::UpdateInfoBox()
@@ -370,19 +400,14 @@ void AGameOffDevCharacter::UpdateInfoBox()
 
 void AGameOffDevCharacter::Interact()
 {
-	FVector MouseWorldLocation = GetMouseWorldLocation();  // Obtenir la position de la souris dans le monde
+	FVector MouseWorldLocation = GetMouseWorldLocation();
 	FVector PlayerLocation = GetActorLocation();
 
 	if (MouseWorldLocation != FVector::ZeroVector)
 	{
-		// Crée une sphere overlap à la position de la souris pour détecter les objets autour
 		FCollisionQueryParams Params;
 		Params.AddIgnoredActor(this);
-
-		// Vérification de l'overlap sur un rayon autour de la souris
 		TArray<FHitResult> HitResults;
-
-		// Utilisation d'une sphere pour rechercher des objets autour de la position de la souris
 		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
 
 		if (bHit)
@@ -391,7 +416,7 @@ void AGameOffDevCharacter::Interact()
 			{
 				AActor* HitActor = Hit.GetActor();
 				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
-				if (HitActor && HitActor->IsA(DoorClass) && Distance <= 100 && !bIsPushingOrPulling) // Si c'est un BP_Door
+				if (HitActor && HitActor->IsA(DoorClass) && Distance <= 100 && !bIsPushingOrPulling)
 				{
 					UFunction* OpenDoorFunction = HitActor->FindFunction(TEXT("OpenDoor"));
 					if (OpenDoorFunction)
@@ -400,7 +425,7 @@ void AGameOffDevCharacter::Interact()
 					}
 					break;
 				}
-				if (HitActor->IsA(KeyClass) && Distance <= 100 && !bIsPushingOrPulling)  // Si c'est la clé
+				if (HitActor->IsA(KeyClass) && Distance <= 100 && !bIsPushingOrPulling)
 				{
 					HitActor->Destroy();
 				}
