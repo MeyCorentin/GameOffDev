@@ -82,6 +82,9 @@ public:
 	bool bIsPushingOrPulling = false;
 
 	UUserWidget* BatteryWidgetInstance;
+
+	UFUNCTION(BlueprintCallable, Category = "Mouse Control")
+	FVector GetMouseWorldLocation() const;
 protected:
 
 
@@ -92,7 +95,6 @@ protected:
 	void SwitchColor(int32 ColorCode);
 	void SwitchColorWithArgs(const FInputActionValue& Value, const bool bEnable, const int ColorIndex);
 
-	FVector GetMouseWorldLocation() const;
 
 	void FaceMouseCursor();
 
@@ -123,6 +125,14 @@ protected:
 	void PauseGame();
 
 	void Interact();
+
+	void RemapInputsForKeyboardLayout();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputMappingContext* AzertyMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputMappingContext* QwertyMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
 	TSubclassOf<AActor> DoorClass;

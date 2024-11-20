@@ -9,8 +9,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "LampeTorche.h"
 #include "ColorFilter.h"
+#include <Windows.h>
 #include "EnhancedInputSubsystems.h"
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
@@ -144,6 +146,33 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 	}
 }
 
+void AGameOffDevCharacter::RemapInputsForKeyboardLayout()
+{
+	// Récupère le layout de clavier actif
+	HKL KeyboardLayout = GetKeyboardLayout(0);
+	LANGID LangID = LOWORD(KeyboardLayout);
+
+	// Détecte si le clavier est AZERTY (French)
+	bool bIsAzerty = (LangID == MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH));
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (!PlayerController) return;
+
+	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = PlayerController->GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	if (!InputSubsystem) return;
+
+	InputSubsystem->ClearAllMappings();
+
+	if (bIsAzerty)
+	{
+		InputSubsystem->AddMappingContext(AzertyMappingContext, 0);
+	}
+	else
+	{
+		InputSubsystem->AddMappingContext(QwertyMappingContext, 0);
+	}
+}
+
 void AGameOffDevCharacter::FaceMouseCursor()
 {
 	FVector TargetLocation = GetMouseWorldLocation();
@@ -181,6 +210,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 void AGameOffDevCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	RemapInputsForKeyboardLayout();
 	if (BatteryWidgetClass)
 	{
 		BatteryWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), BatteryWidgetClass);
