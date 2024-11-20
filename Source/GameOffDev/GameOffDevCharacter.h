@@ -65,6 +65,8 @@ class AGameOffDevCharacter : public ACharacter
 
 public:
 
+	int key_number = 0;
+
 	AGameOffDevCharacter();
 
 	virtual void Tick(float DeltaTime) override;
@@ -77,6 +79,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> BatteryWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "KeyRing")
+	TSubclassOf<AActor> MyKeyRingBlueprint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 	bool bIsDebugModeEnabled = true;
@@ -97,6 +102,8 @@ public:
 	void ShowColorWheel();
 
 	void HideColorWheel();
+
+	void UpdateKeyRing();
 protected:
 
 
