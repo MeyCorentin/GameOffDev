@@ -225,6 +225,22 @@ void AGameOffDevCharacter::BeginPlay()
 	{
 		ColorWheelWidget = CreateWidget<UUserWidget>(GetWorld(), ColorWheelWidgetClass);
 	}
+	FVector SpawnLocation = GetActorLocation();
+	FRotator SpawnRotation = GetActorRotation();
+	KeyRing = GetWorld()->SpawnActor<AActor>(MyKeyRingBlueprint, SpawnLocation, SpawnRotation);
+	USkeletalMeshComponent* PlayerMesh = GetMesh();
+
+	if (PlayerMesh)
+	{
+		KeyRing->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("LeftHandIndex4Socket"));
+		KeyRing->SetActorEnableCollision(false);
+		TArray<UStaticMeshComponent*> StaticMeshComponents;
+		KeyRing->GetComponents<UStaticMeshComponent>(StaticMeshComponents);
+		for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
+		{
+			MeshComponent->SetVisibility(false);
+		}
+	}
 }
 
 void AGameOffDevCharacter::UpdateBatteryUI()
@@ -470,10 +486,7 @@ void AGameOffDevCharacter::UpdateKeyRing()
 			for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
 			{
 				if (MeshComponent && MeshComponent->GetName() == TEXT("Lock"))
-				{
 					LockComponent = MeshComponent;
-					UE_LOG(LogTemp, Warning, TEXT("Found Lock StaticMesh on Door"));
-				}
 			}
 
 
@@ -509,60 +522,35 @@ void AGameOffDevCharacter::UpdateKeyRing()
 
 		if (MyKeyRingBlueprint)
 		{
-			FVector SpawnLocation = GetActorLocation();
-			FRotator SpawnRotation = GetActorRotation(); // Rotation de spawn
+			TArray<UStaticMeshComponent*> StaticMeshComponents;
+			KeyRing->GetComponents<UStaticMeshComponent>(StaticMeshComponents);
 
-			// Créer l'acteur à partir de la classe Blueprint
-			AActor* NewKeyRing = GetWorld()->SpawnActor<AActor>(MyKeyRingBlueprint, SpawnLocation, SpawnRotation);
-
-			if (NewKeyRing)
+			UE_LOG(LogTemp, Warning, TEXT("KEY NUMBER : %i"), key_number);
+			for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
 			{
-				// Récupérer le SkeletalMeshComponent du personnage
-				USkeletalMeshComponent* PlayerMesh = GetMesh();
+				MeshComponent->SetVisibility(false);
 
-				if (PlayerMesh)
+				if (key_number == 1 && MeshComponent->GetName() == TEXT("1Key"))
 				{
-					// Attacher le KeyRing au socket "LeftHandIndex4Socket"
-					NewKeyRing->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("LeftHandIndex4Socket"));
-
-
-					// Désactiver les collisions de l'acteur
-					NewKeyRing->SetActorEnableCollision(false);
-
-					UE_LOG(LogTemp, Warning, TEXT("KeyRing attached to LeftHandIndex4Socket with no collisions"));
+					MeshComponent->SetVisibility(true);
+				}
+				if (key_number == 2 && MeshComponent->GetName() == TEXT("2Key"))
+				{
+					MeshComponent->SetVisibility(true);
+				}
+				if (key_number == 3 && MeshComponent->GetName() == TEXT("3Key"))
+				{
+					MeshComponent->SetVisibility(true);
+				}
+				if (key_number == 0 && MeshComponent->GetName() == TEXT("0Key"))
+				{
+					MeshComponent->SetVisibility(true);
 				}
 
-
-
-				TArray<UStaticMeshComponent*> StaticMeshComponents;
-				NewKeyRing->GetComponents<UStaticMeshComponent>(StaticMeshComponents);
-				for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
-				{
-					if (MeshComponent)
-					{
-						if (key_number == 1 && MeshComponent->GetName() == TEXT("1Key"))
-						{
-							MeshComponent->SetVisibility(true);
-						}
-						else if (key_number == 2 && MeshComponent->GetName() == TEXT("2Key"))
-						{
-							MeshComponent->SetVisibility(true);
-						}
-						else if (key_number == 3 && MeshComponent->GetName() == TEXT("3Key"))
-						{
-							MeshComponent->SetVisibility(true);
-						}
-						else
-						{
-							// Masquer les autres StaticMesh
-							MeshComponent->SetVisibility(false);
-						}
-					}
-				}
 			}
+
 		}
 	}
-
 }
 
 

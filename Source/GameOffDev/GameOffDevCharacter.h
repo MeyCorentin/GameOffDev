@@ -80,6 +80,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> BatteryWidgetClass;
 
+	AActor* KeyRing;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "KeyRing")
 	TSubclassOf<AActor> MyKeyRingBlueprint;
 
