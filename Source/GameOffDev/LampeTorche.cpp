@@ -22,7 +22,6 @@ ALampeTorche::ALampeTorche()
     LampSpotLight->SetIntensity(100000.f);
     LampSpotLight->SetLightColor(FLinearColor::White);
     LampSpotLight->SetAttenuationRadius(5000.f);
-    _ColorFilter[DefaultColor] = true;
 }
 
 void ALampeTorche::BeginPlay()
@@ -32,6 +31,7 @@ void ALampeTorche::BeginPlay()
     FTimerDelegate TimerDelegate;
     TimerDelegate.BindUFunction(this, FName("UpdateBattery"));
 
+    _ColorFilter[DefaultColor] = true;
 
     if (GEngine)
     {
@@ -44,12 +44,37 @@ void ALampeTorche::BeginPlay()
                 1.0f,
                 true
             );
-            UE_LOG(LogTemp, Warning, TEXT("Timer !"));
         }
     }
     InitBatteryLevel = BatteryLevel;
     InitialIntensity = LampSpotLight->Intensity;
     InitialAttenuationRadius = LampSpotLight->AttenuationRadius;
+
+    FLinearColor LampColor;
+
+    switch (DefaultColor)
+    {
+        case 0:
+            LampColor = FLinearColor(0.0f, 0.0f, 1.0f); // Bleu
+            break;
+        case 1:
+            LampColor = FLinearColor(1.0f, 1.0f, 0.0f);
+            break;
+        case 2:
+            LampColor = FLinearColor(1.0f, 0.0f, 0.0f);
+            break;
+        case 3:
+            LampColor = FLinearColor(0.0f, 1.0f, 0.0f);
+            break;
+        default:
+            LampColor = FLinearColor(1.0f, 1.0f, 1.0f);
+            break;
+    }
+
+    if (LampSpotLight)
+    {
+        LampSpotLight->SetLightColor(LampColor);
+    }
 }
 
 void ALampeTorche::Tick(float DeltaTime)
@@ -67,31 +92,47 @@ void ALampeTorche::Charge(float energy)
 
 void ALampeTorche::ChangeColor(int32 ColorCode)
 {
-    if (ColorCode < 1 || ColorCode > _ColorFilter.Num())
+    if (ColorCode < 0 || ColorCode > _ColorFilter.Num())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);
         return;
     }
 
     switch (ColorCode)
     {
-    case 1:
-        if (_ColorFilter[0])
-            LampSpotLight->SetLightColor(FLinearColor::Red);
-        break;
+        case 0:
+            if (_ColorFilter[0])
+            {
+                LampSpotLight->SetLightColor(FLinearColor::Blue);
+                DefaultColor = 0;
+            }
+            break;
 
-    case 2:
-        if (_ColorFilter[1])
-            LampSpotLight->SetLightColor(FLinearColor::Green);
-        break;
+        case 1:
+            if (_ColorFilter[1])
+            {
+                LampSpotLight->SetLightColor(FLinearColor::Yellow);
+                DefaultColor = 1;
+            }
+            break;
 
-    case 3:
-        if (_ColorFilter[2])
-            LampSpotLight->SetLightColor(FLinearColor::Blue);
-        break;
+        case 2:
+            if (_ColorFilter[2])
+            {
+                LampSpotLight->SetLightColor(FLinearColor::Red);
+                DefaultColor = 2;
+            }
+            break;
 
-    default:
-        break;
+        case 3:
+            if (_ColorFilter[3])
+            {
+                LampSpotLight->SetLightColor(FLinearColor::Green);
+                DefaultColor = 3;
+            }
+            break;
+
+        default:
+            break;
     }
 
 }

@@ -16,7 +16,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "Components/ProgressBar.h"
 #include "GameOffDevGameMode.h"
-
+#include "Components/CanvasPanel.h"
+#include "Components/Image.h"
+#include "Components/Widget.h"
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
 #include "InputActionValue.h"
@@ -124,8 +126,6 @@ void AGameOffDevCharacter::CheckNearObject()
 			ABattery* Battery = Cast<ABattery>(Actor);
 			if (Battery && CurrentLampeTorche != nullptr)
 			{
-				if (bIsDebugModeEnabled)
-					UE_LOG(LogTemp, Warning, TEXT("Detect Battery"));
 				CurrentLampeTorche->Charge(Battery->GetEnergyValue());
 				Battery->Destroy();
 				break;
@@ -133,8 +133,6 @@ void AGameOffDevCharacter::CheckNearObject()
 			ALampeTorche* LampeTorche = Cast<ALampeTorche>(Actor);
 			if (LampeTorche && CurrentLampeTorche == nullptr)
 			{
-				if (bIsDebugModeEnabled)
-					UE_LOG(LogTemp, Warning, TEXT("FlashLight"));
 				PickupLampeTorche(LampeTorche);
 				break;
 			}
@@ -162,11 +160,9 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 
 void AGameOffDevCharacter::RemapInputsForKeyboardLayout()
 {
-	// Récupère le layout de clavier actif
 	HKL KeyboardLayout = GetKeyboardLayout(0);
 	LANGID LangID = LOWORD(KeyboardLayout);
 
-	// Détecte si le clavier est AZERTY (French)
 	bool bIsAzerty = (LangID == MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH));
 
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -211,17 +207,125 @@ void AGameOffDevCharacter::FaceMouseCursor()
 void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FaceMouseCursor();
-	CheckNearObject();
-	if (bIsDebugModeEnabled == true)
+	if (!display_wheel)
 	{
-		TraceToMouseCursor();
-		DrawDetectionConeToMouse();
+		FaceMouseCursor();
+		CheckNearObject();
+		if (bIsDebugModeEnabled == true)
+		{
+			TraceToMouseCursor();
+			DrawDetectionConeToMouse();
+		}
+		UpdateBatteryUI();
+		UpdateInfoBox();
+		UpdateKeyRing();
 	}
-	UpdateBatteryUI();
-	UpdateInfoBox();
-	UpdateKeyRing();
+
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (PlayerController && CurrentLampeTorche != nullptr)
+	{
+
+		if (PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
+		{
+			if (!display_wheel)
+			{
+				ShowColorWheel();
+			}
+			if (display_wheel)
+			{
+				FVector2D InputDirection = FVector2D(0, 0);
+				FString ImageName = "C" + FString::FromInt(CurrentLampeTorche->DefaultColor);
+				ShowColorImage(ImageName);
+				if (PlayerController->IsInputKeyDown(EKeys::Z) || PlayerController->IsInputKeyDown(EKeys::Up))
+				{
+					SwitchColor(0);
+					ShowColorImage("C0");
+				}
+				else if (PlayerController->IsInputKeyDown(EKeys::S) || PlayerController->IsInputKeyDown(EKeys::Down))
+				{
+					SwitchColor(1);
+					ShowColorImage("C1");
+				}
+				if (PlayerController->IsInputKeyDown(EKeys::Q) || PlayerController->IsInputKeyDown(EKeys::Left))
+				{
+					SwitchColor(2);
+					ShowColorImage("C2");
+				}
+				else if (PlayerController->IsInputKeyDown(EKeys::D) || PlayerController->IsInputKeyDown(EKeys::Right))
+				{
+					SwitchColor(3);
+					ShowColorImage("C3");
+				}
+			}
+		}
+		else
+		{
+			if (display_wheel) 
+			{
+				UE_LOG(LogTemp, Warning, TEXT("!HIDE"));
+				HideColorWheel();
+			}
+		}
+	}
 }
+
+void AGameOffDevCharacter::ShowColorImage(const FString& ImageName)
+{
+	if (ColorWheelWidget)
+	{
+		if (UWidget* RootWidget = ColorWheelWidget->GetRootWidget())
+		{
+			if (UCanvasPanel* CanvasPanel = Cast<UCanvasPanel>(RootWidget))
+			{
+				for (int32 i = 0; i < CanvasPanel->GetChildrenCount(); ++i)
+				{
+					UWidget* ChildWidget = CanvasPanel->GetChildAt(i);
+					if (UImage* Image = Cast<UImage>(ChildWidget))
+					{
+						Image->SetVisibility(ESlateVisibility::Collapsed);
+						if (Image->GetName() == ImageName)
+						{
+							Image->SetVisibility(ESlateVisibility::Visible);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void AGameOffDevCharacter::ShowColorWheel()
+{
+	if (ColorWheelWidget)
+	{
+		ColorWheelWidget->AddToViewport();
+		ColorWheelWidget->SetVisibility(ESlateVisibility::Visible);
+		display_wheel = true;
+
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->bShowMouseCursor = true;
+		}
+	}
+}
+
+void AGameOffDevCharacter::HideColorWheel()
+{
+	if (ColorWheelWidget)
+	{
+		display_wheel = false;
+		ColorWheelWidget->RemoveFromParent();
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			PlayerController->bShowMouseCursor = false;
+		}
+	}
+}
+
+
 
 void AGameOffDevCharacter::BeginPlay()
 {
@@ -271,14 +375,11 @@ void AGameOffDevCharacter::UpdateBatteryUI()
 {
 	if (BatteryWidgetInstance)
 	{
-		// Obtenez la ProgressBar à partir du Widget
 		UProgressBar* BatteryProgressBar = Cast<UProgressBar>(BatteryWidgetInstance->GetWidgetFromName("BatteryBar"));
 		if (BatteryProgressBar)
 		{
 			if (CurrentLampeTorche != nullptr)
 			{
-				// Met à jour la valeur de la ProgressBar en fonction du niveau de batterie
-				// Assurez-vous que BatteryLevel est un float entre 0.0 et 1.0 pour le bon fonctionnement de la barre
 				BatteryProgressBar->SetPercent(FMath::Clamp(CurrentLampeTorche->BatteryLevel / 100.0f, 0.0f, 1.0f));
 			}
 		}
@@ -299,7 +400,10 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
+		if (!display_wheel)
+		{
+			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
+		}
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
@@ -308,12 +412,15 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 			if (UEnhancedInputComponent* EnhancedInputComponentColor = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
 			{
 				EnhancedInputComponentColor->BindAction(SwitchColorAction1, ETriggerEvent::Started, this,
-					&AGameOffDevCharacter::SwitchColorWithArgs, true, 1);
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 0);
 
 				EnhancedInputComponentColor->BindAction(SwitchColorAction2, ETriggerEvent::Started, this,
-					&AGameOffDevCharacter::SwitchColorWithArgs, true, 2);
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 1);
 
 				EnhancedInputComponentColor->BindAction(SwitchColorAction3, ETriggerEvent::Started, this,
+					&AGameOffDevCharacter::SwitchColorWithArgs, true, 2);
+
+				EnhancedInputComponentColor->BindAction(SwitchColorAction4, ETriggerEvent::Started, this,
 					&AGameOffDevCharacter::SwitchColorWithArgs, true, 3);
 			}
 		}
@@ -321,37 +428,31 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::DropObject);
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Interact);
-
-		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ShowColorWheel);
-		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::HideColorWheel);
-		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Canceled, this, &AGameOffDevCharacter::HideColorWheel);
-
 	}
 }
 
-void AGameOffDevCharacter::ShowColorWheel()
+void AGameOffDevCharacter::DisableGameplayInputs()
 {
-	if (ColorWheelWidget && !ColorWheelWidget->IsInViewport())
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+	if (EnhancedInputComponent)
 	{
-		ColorWheelWidget->AddToViewport();
-		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			PlayerController->bShowMouseCursor = true;
-		}
+		EnhancedInputComponent->ClearBindingValues();
 	}
 }
 
-void AGameOffDevCharacter::HideColorWheel()
+
+void AGameOffDevCharacter::EnableGameplayInputs()
 {
-	if (ColorWheelWidget && ColorWheelWidget->IsInViewport())
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hide color wheel"));
-		ColorWheelWidget->RemoveFromViewport();
-		ColorWheelWidget->RemoveFromParent();
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
+		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
+		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
 	}
 }
-
 
 void AGameOffDevCharacter::UpdateInfoBox()
 {
@@ -439,9 +540,6 @@ void AGameOffDevCharacter::UpdateInfoBox()
 	}
 }
 
-
-
-
 void AGameOffDevCharacter::Interact()
 {
 	FVector MouseWorldLocation = GetMouseWorldLocation();
@@ -473,7 +571,7 @@ void AGameOffDevCharacter::Interact()
 				{
 					HitActor->Destroy();
 				}
-				if (HitActor->IsA(CurtainClass) && Distance <= 100 && !bIsPushingOrPulling)  // Si c'est la clé
+				if (HitActor->IsA(CurtainClass) && Distance <= 100 && !bIsPushingOrPulling)
 				{
 					UFunction* OpenCurtainFunction = HitActor->FindFunction(TEXT("OpenCurtain"));
 					if (OpenCurtainFunction)
@@ -596,7 +694,6 @@ void AGameOffDevCharacter::SwitchColorWithArgs(const FInputActionValue& Value, c
 {
 	if (bEnable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Color %i"), ColorIndex);
 		SwitchColor(ColorIndex); 
 	}
 }
@@ -681,7 +778,7 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 					PushDirection = -RightDirection;
 				}
 
-				FVector NewLocation = TargetBox->GetActorLocation() + (PushDirection / 2); // Ajustez la vitesse ici
+				FVector NewLocation = TargetBox->GetActorLocation() + (PushDirection / 2);
 				TargetBox->SetActorLocation(NewLocation);
 			}
 		}
@@ -779,21 +876,6 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 
 	float Length = CurrentLampeTorche->LampSpotLight->AttenuationRadius;
 	float ConeAngle = CurrentLampeTorche->LampSpotLight->OuterConeAngle;
-
-	/*DrawDebugCone(
-		GetWorld(),
-		HandPosition,
-		CharacterDirection,
-		Length,
-		FMath::DegreesToRadians(ConeAngle),
-		FMath::DegreesToRadians(ConeAngle),
-		12,
-		FColor::Green,
-		false,
-		-1.0f,
-		0,
-		1.0f
-	);*/
 }
 
 void AGameOffDevCharacter::Look(const FInputActionValue& Value)
