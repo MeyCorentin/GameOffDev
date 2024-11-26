@@ -67,7 +67,6 @@ void ALampeTorche::Charge(float energy)
 
 void ALampeTorche::ChangeColor(int32 ColorCode)
 {
-    // Vérifiez que ColorCode est valide
     if (ColorCode < 1 || ColorCode > _ColorFilter.Num())
     {
         UE_LOG(LogTemp, Warning, TEXT("Invalid color code: %d. Use 1 (Red), 2 (Green), or 3 (Blue)."), ColorCode);

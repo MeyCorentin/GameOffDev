@@ -47,7 +47,7 @@ void AGameOffDevCharacter::TraceToMouseCursor()
 		Start = GetActorLocation();
 		Direction = (TargetLocation - Start).GetSafeNormal();
 		End = Start + Direction * 1000.f;
-		DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, -1.0f, 0, 1.0f);
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, -1.0f, 0, 1.0f);
 
 	}
 }
