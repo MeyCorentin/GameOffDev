@@ -15,6 +15,7 @@
 #include <Windows.h>
 #include "EnhancedInputSubsystems.h"
 #include "Components/ProgressBar.h"
+#include "GameOffDevGameMode.h"
 
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
@@ -252,6 +253,16 @@ void AGameOffDevCharacter::BeginPlay()
 		for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
 		{
 			MeshComponent->SetVisibility(false);
+		}
+	}
+	if (AGameOffDevGameMode* GameMode = Cast<AGameOffDevGameMode>(UGameplayStatics::GetGameMode(this)))
+	{
+		FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+
+		if (!CurrentLevelName.Equals(TEXT("Level1"), ESearchCase::IgnoreCase))
+		{
+			ALampeTorche* NewLampeTorche = GetWorld()->SpawnActor<ALampeTorche>(ALampeTorche::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+			PickupLampeTorche(NewLampeTorche);
 		}
 	}
 }
