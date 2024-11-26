@@ -151,12 +151,13 @@ protected:
 	void RemapInputsForKeyboardLayout();
 
 	void UpdateInfoBox();
-
 	void DisableGameplayInputs();
 
 	void EnableGameplayInputs();
 
 	void ShowColorImage(const FString& ImageName);
+
+	void FaceCameraToCharacter();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;

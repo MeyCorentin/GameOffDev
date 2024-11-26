@@ -228,7 +228,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 		{
 			if (!display_wheel)
 			{
-				this->ShowColorWheel();
+				ShowColorWheel();
 			}
 			if (display_wheel)
 			{
