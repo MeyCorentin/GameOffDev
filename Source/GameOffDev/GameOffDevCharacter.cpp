@@ -14,6 +14,8 @@
 #include "ColorFilter.h"
 #include <Windows.h>
 #include "EnhancedInputSubsystems.h"
+#include "Components/ProgressBar.h"
+
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
 #include "InputActionValue.h"
@@ -51,7 +53,6 @@ void AGameOffDevCharacter::TraceToMouseCursor()
 
 	}
 }
-
 FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -68,16 +69,28 @@ FVector AGameOffDevCharacter::GetMouseWorldLocation() const
 
 				FHitResult HitResult;
 				FCollisionQueryParams Params;
-				Params.AddIgnoredActor(this);
+				Params.AddIgnoredActor(this); // Ignorer le joueur lui-même
 
-				if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+				bool bFirstHit = true;
+
+				while (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
 				{
-					AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(HitResult.GetActor());
-					if (HighlightableObject && !HighlightableObject->getDisplayStatus())
+					AActor* HitActor = HitResult.GetActor();
+					if (bFirstHit)
 					{
-						Params.AddIgnoredActor(HighlightableObject);
+						Params.AddIgnoredActor(HitActor);
+						bFirstHit = false;
 					}
-					return HitResult.Location;
+					else
+					{
+						AHighlightableObject* HighlightableObject = Cast<AHighlightableObject>(HitActor);
+						if (HighlightableObject && !HighlightableObject->getDisplayStatus())
+						{
+							Params.AddIgnoredActor(HighlightableObject);
+						}
+
+						return HitResult.Location;
+					}
 				}
 			}
 		}
@@ -247,12 +260,15 @@ void AGameOffDevCharacter::UpdateBatteryUI()
 {
 	if (BatteryWidgetInstance)
 	{
-		UTextBlock* BatteryTextBlock = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("BatteryTextBlock"));
-		if (BatteryTextBlock)
+		// Obtenez la ProgressBar à partir du Widget
+		UProgressBar* BatteryProgressBar = Cast<UProgressBar>(BatteryWidgetInstance->GetWidgetFromName("BatteryBar"));
+		if (BatteryProgressBar)
 		{
 			if (CurrentLampeTorche != nullptr)
 			{
-				BatteryTextBlock->SetText(FText::FromString(FString::Printf(TEXT("Battery: %.1f%%"), CurrentLampeTorche->BatteryLevel)));
+				// Met à jour la valeur de la ProgressBar en fonction du niveau de batterie
+				// Assurez-vous que BatteryLevel est un float entre 0.0 et 1.0 pour le bon fonctionnement de la barre
+				BatteryProgressBar->SetPercent(FMath::Clamp(CurrentLampeTorche->BatteryLevel / 100.0f, 0.0f, 1.0f));
 			}
 		}
 	}
