@@ -185,6 +185,24 @@ void AGameOffDevCharacter::RemapInputsForKeyboardLayout()
 	}
 }
 
+void AGameOffDevCharacter::FaceCameraToCharacter()
+{
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (PlayerController)
+	{
+		AActor* CameraActor = PlayerController->GetViewTarget();
+		if (CameraActor)
+		{
+			FVector CameraLocation = CameraActor->GetActorLocation();
+			FVector CharacterLocation = GetActorLocation();
+			FVector DirectionToCharacter = CharacterLocation - CameraLocation;
+			DirectionToCharacter.Z = 0;
+			FRotator NewRotation = DirectionToCharacter.Rotation();
+			CameraActor->SetActorRotation(NewRotation);
+		}
+	}
+}
+
 void AGameOffDevCharacter::FaceMouseCursor()
 {
 	FVector TargetLocation = GetMouseWorldLocation();
@@ -209,8 +227,14 @@ void AGameOffDevCharacter::FaceMouseCursor()
 void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+	if (CurrentLevelName.Equals(TEXT("Level2"), ESearchCase::IgnoreCase))
+	{
+		//FaceCameraToCharacter();
+	}
 	if (!display_wheel)
 	{
+
 		FaceMouseCursor();
 		CheckNearObject();
 		if (bIsDebugModeEnabled == true)

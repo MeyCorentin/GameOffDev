@@ -155,8 +155,9 @@ protected:
 	void RemapInputsForKeyboardLayout();
 
 	void UpdateInfoBox();
-	void DisableGameplayInputs();
 
+	void DisableGameplayInputs();
+	
 	void EnableGameplayInputs();
 
 	void ShowColorImage(const FString& ImageName);
@@ -166,6 +167,7 @@ protected:
 	bool CanJumpBasedOnBox();
 
 	void Jump();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;
 
