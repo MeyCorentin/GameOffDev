@@ -50,6 +50,8 @@ class AGameOffDevCharacter : public ACharacter
 	UInputAction* SwitchColorAction2;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SwitchColorAction3;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SwitchColorAction4;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DebugAction;
@@ -64,9 +66,8 @@ class AGameOffDevCharacter : public ACharacter
 	UInputAction* WheelAction;
 
 public:
-
 	int key_number = 0;
-
+	bool display_wheel = false;
 	AGameOffDevCharacter();
 
 	virtual void Tick(float DeltaTime) override;
@@ -104,6 +105,8 @@ public:
 	void ShowColorWheel();
 
 	void HideColorWheel();
+
+	void UpdateColorWheel(const FInputActionValue& Value);
 
 	void UpdateKeyRing();
 protected:
@@ -150,6 +153,12 @@ protected:
 	void RemapInputsForKeyboardLayout();
 
 	void UpdateInfoBox();
+
+	void DisableGameplayInputs();
+
+	void EnableGameplayInputs();
+
+	void ShowColorImage(const FString& ImageName);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;
