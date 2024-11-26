@@ -208,10 +208,33 @@ void AGameOffDevCharacter::FaceMouseCursor()
 	}
 }
 
+void AGameOffDevCharacter::FaceCameraToCharacter()
+{
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	if (PlayerController)
+	{
+		AActor* CameraActor = PlayerController->GetViewTarget();
+		if (CameraActor)
+		{
+			FVector CameraLocation = CameraActor->GetActorLocation();
+			FVector CharacterLocation = GetActorLocation();
+
+			FVector DirectionToCharacter = CharacterLocation - CameraLocation;
+			DirectionToCharacter.Z = 0;
+			FRotator NewRotation = DirectionToCharacter.Rotation();
+			CameraActor->SetActorRotation(NewRotation);
+		}
+	}
+}
 void AGameOffDevCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	FaceMouseCursor();
+	FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+	if (CurrentLevelName.Equals(TEXT("Level2"), ESearchCase::IgnoreCase))
+	{
+		FaceCameraToCharacter();
+	}
 	CheckNearObject();
 	if (bIsDebugModeEnabled == true)
 	{

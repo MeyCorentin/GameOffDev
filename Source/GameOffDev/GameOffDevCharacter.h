@@ -151,6 +151,8 @@ protected:
 
 	void UpdateInfoBox();
 
+	void FaceCameraToCharacter();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;
 
