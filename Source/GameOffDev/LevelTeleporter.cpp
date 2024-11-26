@@ -60,10 +60,16 @@ void ALevelTeleporter::LoadLevel(UPrimitiveComponent* OverlappedComponent, AActo
     {
         PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
 
+        // Stocke une référence faible pour éviter les problèmes si `this` est détruit
+        TWeakObjectPtr<ALevelTeleporter> WeakThis(this);
+
         FTimerHandle TimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]()
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis]()
             {
-                UGameplayStatics::OpenLevel(this, LevelToLoad);
+                if (WeakThis.IsValid()) // Vérifie si l'objet est toujours valide
+                {
+                    UGameplayStatics::OpenLevel(WeakThis.Get(), WeakThis->LevelToLoad);
+                }
             }, 1.0f, false);
     }
 }
