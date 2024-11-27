@@ -224,12 +224,11 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	if (PlayerController && CurrentLampeTorche != nullptr)
 	{
-
 		if (PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 		{
 			if (!display_wheel)
 			{
-				ShowColorWheel();
+				this->ShowColorWheel();
 			}
 			if (display_wheel)
 			{
@@ -294,22 +293,28 @@ void AGameOffDevCharacter::ShowColorImage(const FString& ImageName)
 	}
 }
 
-
 void AGameOffDevCharacter::ShowColorWheel()
 {
-	if (ColorWheelWidget)
-	{
-		ColorWheelWidget->AddToViewport();
-		ColorWheelWidget->SetVisibility(ESlateVisibility::Visible);
-		display_wheel = true;
+    if (!ColorWheelWidget)
+    {
+        UE_LOG(LogTemp, Error, TEXT("ColorWheelWidget is null. Cannot show color wheel."));
+        return;
+    }
 
-		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-		if (PlayerController)
-		{
-			PlayerController->bShowMouseCursor = true;
-		}
-	}
+    if (!ColorWheelWidget->IsInViewport())
+    {
+        ColorWheelWidget->AddToViewport();
+        ColorWheelWidget->SetVisibility(ESlateVisibility::Visible);
+        display_wheel = true;
+
+        APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+        if (PlayerController)
+        {
+            PlayerController->bShowMouseCursor = true;
+        }
+    }
 }
+
 
 void AGameOffDevCharacter::HideColorWheel()
 {
@@ -716,10 +721,10 @@ void AGameOffDevCharacter::ChangeDebugMode()
 void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	APlayerController* PlayerController = Cast<APlayerController>(Controller);
 
-	if (Controller != nullptr)
+	if (Controller != nullptr && !display_wheel && !PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 	{
-		APlayerController* PlayerController = Cast<APlayerController>(Controller);
 		if (PlayerController)
 		{
 			FVector CameraDirection = PlayerController->PlayerCameraManager->GetActorForwardVector();
