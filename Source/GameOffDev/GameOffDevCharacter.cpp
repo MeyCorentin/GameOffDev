@@ -221,7 +221,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 		UpdateKeyRing();
 	}
 
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController && CurrentLampeTorche != nullptr)
 	{
 		if (PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
@@ -229,7 +229,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 			if (!display_wheel)
 			{
 				ShowColorWheel();
-			}
+			}	
 			if (display_wheel)
 			{
 				FVector2D InputDirection = FVector2D(0, 0);
@@ -295,41 +295,48 @@ void AGameOffDevCharacter::ShowColorImage(const FString& ImageName)
 
 void AGameOffDevCharacter::ShowColorWheel()
 {
-    if (!ColorWheelWidget)
-    {
-        UE_LOG(LogTemp, Error, TEXT("ColorWheelWidget is null. Cannot show color wheel."));
-        return;
-    }
+	if (!ColorWheelWidget)
+	{
+		return;
+	}
 
-    if (!ColorWheelWidget->IsInViewport())
-    {
-        ColorWheelWidget->AddToViewport();
-        ColorWheelWidget->SetVisibility(ESlateVisibility::Visible);
-        display_wheel = true;
+	if (!IsValid(ColorWheelWidget))
+	{
+		return;
+	}
 
-        APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-        if (PlayerController)
-        {
-            PlayerController->bShowMouseCursor = true;
-        }
-    }
+	if (ColorWheelWidget->Visibility != ESlateVisibility::Visible)
+	{
+		ColorWheelWidget->SetVisibility(ESlateVisibility::Visible);
+		display_wheel = true;
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (PlayerController)
+		{
+			PlayerController->bShowMouseCursor = true;
+		}
+	}
 }
-
 
 void AGameOffDevCharacter::HideColorWheel()
 {
-	if (ColorWheelWidget)
+	if (!ColorWheelWidget)
 	{
+		return;
+	}
+
+	if (IsValid(ColorWheelWidget) && ColorWheelWidget->Visibility != ESlateVisibility::Collapsed)
+	{
+		ColorWheelWidget->SetVisibility(ESlateVisibility::Collapsed);
 		display_wheel = false;
-		ColorWheelWidget->RemoveFromParent();
-		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 		if (PlayerController)
 		{
 			PlayerController->bShowMouseCursor = false;
 		}
 	}
 }
-
 
 
 void AGameOffDevCharacter::BeginPlay()
@@ -347,6 +354,11 @@ void AGameOffDevCharacter::BeginPlay()
 	if (ColorWheelWidgetClass)
 	{
 		ColorWheelWidget = CreateWidget<UUserWidget>(GetWorld(), ColorWheelWidgetClass);
+		if (ColorWheelWidget)
+		{
+			ColorWheelWidget->AddToViewport();
+			ColorWheelWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 	FVector SpawnLocation = GetActorLocation();
 	FRotator SpawnRotation = GetActorRotation();
@@ -392,7 +404,7 @@ void AGameOffDevCharacter::UpdateBatteryUI()
 }
 
 void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
+{	
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -405,10 +417,10 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-		if (!display_wheel)
-		{
-			EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
-		}
+
+		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::ShowColorWheel);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
+
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
 		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
@@ -722,7 +734,10 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-
+	if (PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
+	{
+		return;
+	}
 	if (Controller != nullptr && !display_wheel && !PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 	{
 		if (PlayerController)
@@ -823,17 +838,17 @@ bool AGameOffDevCharacter::CheckForPushableBox()
 	}
 	return false;
 }
-
 void AGameOffDevCharacter::BeginPushOrPull()
 {
 	FVector Start = GetActorLocation();
 
-	FVector ForwardVector = GetActorForwardVector();
-	FRotator NewRotation = FRotator(0.f, 90.f, 0.f);
-	ForwardVector = NewRotation.RotateVector(ForwardVector);
+	// Récupérer la position de la souris dans le monde
+	FVector End = GetMouseWorldLocation();
 
-	FVector End = Start + ForwardVector * 50.0f;
-
+	if (End.IsZero())
+	{
+		return;
+	}
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
@@ -842,10 +857,9 @@ void AGameOffDevCharacter::BeginPushOrPull()
 
 	if (bHit)
 	{
-
-
 		if (bIsDebugModeEnabled)
 			DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
+
 		TargetBox = Cast<APoussableBox>(HitResult.GetActor());
 		if (TargetBox != nullptr)
 		{
@@ -874,7 +888,7 @@ void AGameOffDevCharacter::DrawDetectionConeToMouse()
 	FVector MouseWorldPosition = GetMouseWorldLocation();
 
 	FVector MouseWorldDirection;
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	FVector CameraLocation = PlayerController->PlayerCameraManager->GetCameraLocation();
 	MouseWorldDirection = (MouseWorldPosition - CameraLocation).GetSafeNormal();
 	FVector CharacterDirection = (MouseWorldPosition - HandPosition).GetSafeNormal();

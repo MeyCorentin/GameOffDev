@@ -173,5 +173,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
 	TSubclassOf<AActor> CurtainClass;
+
 };
 
