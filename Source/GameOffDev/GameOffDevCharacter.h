@@ -106,8 +106,6 @@ public:
 
 	void HideColorWheel();
 
-	void UpdateColorWheel(const FInputActionValue& Value);
-
 	void UpdateKeyRing();
 protected:
 
