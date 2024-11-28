@@ -943,6 +943,29 @@ void AGameOffDevCharacter::LoadPlayerData()
 	UGameOffGameInstance* GameInstance = Cast<UGameOffGameInstance>(UGameplayStatics::GetGameInstance(this));
 	if (GameInstance && GameInstance->CurrentSave)
 	{
+		FVector SpawnLocation;
+
+		if (GameInstance->CurrentSave->PreviousLevelName == "Level1")
+		{
+			SpawnLocation = FVector(272.071216f, 0.000000f, 103.500847f);
+		}
+		else if (GameInstance->CurrentSave->PreviousLevelName == "Level3")
+		{
+			SpawnLocation = FVector(-367.928784f, 20.000000f, 103.500847f);
+		}
+		else if (GameInstance->CurrentSave->PreviousLevelName == "Level4")
+		{
+			SpawnLocation = FVector(412.071216, 40.0, 113.500847f);
+		}
+		else if (GameInstance->CurrentSave->PreviousLevelName == "Level5")
+		{
+			SpawnLocation = FVector(-347.928784f, -310.000000f, 313.500847f);
+		}
+		else
+		{
+			SpawnLocation = GetActorLocation();
+		}
+		SetActorLocation(SpawnLocation);
 		if (CurrentLampeTorche && GameInstance->CurrentSave->FilterInventory.Num() > 0)
 		{
 			CurrentLampeTorche->_ColorFilter = GameInstance->CurrentSave->FilterInventory;
