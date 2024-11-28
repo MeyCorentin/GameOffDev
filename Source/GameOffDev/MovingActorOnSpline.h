@@ -2,6 +2,9 @@
 #include "GameFramework/Actor.h"
 #include "MovingActorOnSpline.generated.h"
 
+#pragma once
+
+
 UCLASS()
 class AMovingActorOnSpline : public AActor
 {
