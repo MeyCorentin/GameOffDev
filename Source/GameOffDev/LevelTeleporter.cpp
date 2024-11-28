@@ -1,6 +1,7 @@
 #include "LevelTeleporter.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "GameOffDevCharacter.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -60,14 +61,18 @@ void ALevelTeleporter::LoadLevel(UPrimitiveComponent* OverlappedComponent, AActo
     {
         PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
 
-        // Stocke une référence faible pour éviter les problèmes si `this` est détruit
         TWeakObjectPtr<ALevelTeleporter> WeakThis(this);
 
         FTimerHandle TimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis]()
+        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis, this]()
             {
-                if (WeakThis.IsValid()) // Vérifie si l'objet est toujours valide
+                if (WeakThis.IsValid())
                 {
+                    AGameOffDevCharacter* PlayerChar = Cast<AGameOffDevCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+                    if (PlayerChar)
+                    {
+                        PlayerChar->SavePlayerData();
+                    }
                     UGameplayStatics::OpenLevel(WeakThis.Get(), WeakThis->LevelToLoad);
                 }
             }, 1.0f, false);

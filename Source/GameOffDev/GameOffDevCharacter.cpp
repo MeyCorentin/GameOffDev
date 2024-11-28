@@ -22,6 +22,7 @@
 #include "Components/TextBlock.h" 
 #include "Blueprint/UserWidget.h"
 #include "InputActionValue.h"
+#include "GameOffGameInstance.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter)
 AGameOffDevCharacter::AGameOffDevCharacter()
@@ -386,6 +387,7 @@ void AGameOffDevCharacter::BeginPlay()
 			PickupLampeTorche(NewLampeTorche);
 		}
 	}
+	LoadPlayerData();
 }
 
 void AGameOffDevCharacter::UpdateBatteryUI()
@@ -906,4 +908,48 @@ void AGameOffDevCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AGameOffDevCharacter::SavePlayerData()
+{
+	UGameOffGameInstance* GameInstance = Cast<UGameOffGameInstance>(UGameplayStatics::GetGameInstance(this));
+	if (!GameInstance->CurrentSave)
+	{
+		GameInstance->CurrentSave = Cast<UGameOffSaveGame>(UGameplayStatics::CreateSaveGameObject(UGameOffSaveGame::StaticClass()));
+	}
+
+	if (GameInstance && GameInstance->CurrentSave)
+	{
+		if (CurrentLampeTorche && CurrentLampeTorche->_ColorFilter.Num() > 0)
+		{
+			GameInstance->CurrentSave->FilterInventory = CurrentLampeTorche->_ColorFilter;
+			FString FilterInventoryLog;
+			for (bool bValue : GameInstance->CurrentSave->FilterInventory)
+			{
+				FilterInventoryLog += bValue ? TEXT("true, ") : TEXT("false, ");
+			}
+		}
+		GameInstance->CurrentSave->FilterInventory = CurrentLampeTorche->_ColorFilter;
+		GameInstance->CurrentSave->PreviousLevelName = UGameplayStatics::GetCurrentLevelName(this);
+		GameInstance->CurrentSave->DefaultColor = CurrentLampeTorche->DefaultColor;
+		GameInstance->CurrentSave->LightColor = CurrentLampeTorche->LampSpotLight->GetLightColor();
+		GameInstance->SaveGameData();
+	}
+}
+
+void AGameOffDevCharacter::LoadPlayerData()
+{
+
+	UGameOffGameInstance* GameInstance = Cast<UGameOffGameInstance>(UGameplayStatics::GetGameInstance(this));
+	if (GameInstance && GameInstance->CurrentSave)
+	{
+		if (CurrentLampeTorche && GameInstance->CurrentSave->FilterInventory.Num() > 0)
+		{
+			CurrentLampeTorche->_ColorFilter = GameInstance->CurrentSave->FilterInventory;
+		}
+		CurrentLampeTorche->DefaultColor = GameInstance->CurrentSave->DefaultColor;
+		CurrentLampeTorche->_ColorFilter = GameInstance->CurrentSave->FilterInventory;
+		CurrentLampeTorche->LampSpotLight->SetLightColor(GameInstance->CurrentSave->LightColor);
+	}
+
 }

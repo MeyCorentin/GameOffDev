@@ -107,6 +107,10 @@ public:
 	void HideColorWheel();
 
 	void UpdateKeyRing();
+
+	void SavePlayerData();
+
+	void LoadPlayerData();
 protected:
 
 
