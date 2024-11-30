@@ -45,20 +45,17 @@ bool AHighlightableObject::isIlluminatedBySpotLight()
             continue;
         }
 
+        FVector LightDirection = SpotLightComponent->GetForwardVector();
+        FVector LightLocation = SpotLightComponent->GetComponentLocation();
+        float Length = SpotLightComponent->AttenuationRadius;
+        float ConeAngle = SpotLightComponent->InnerConeAngle;
+
         if (RequiredColor.R != SpotLightComponent->LightColor.R ||
             RequiredColor.G != SpotLightComponent->LightColor.G ||
             RequiredColor.B != SpotLightComponent->LightColor.B)
         {
             continue;
         }
-
-        FVector LightDirection = SpotLightComponent->GetForwardVector();
-        FVector LightLocation = SpotLightComponent->GetComponentLocation();
-        float Length = SpotLightComponent->AttenuationRadius;
-        float ConeAngle = SpotLightComponent->InnerConeAngle;
-
-
-        //DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
 
         AActor* _actor = (TargetActor) ? TargetActor : this;
         isIlluminated = IsMeshInCone(_actor, Length, ConeAngle, LightDirection, LightLocation);

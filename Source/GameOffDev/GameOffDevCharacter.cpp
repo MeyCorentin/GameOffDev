@@ -252,6 +252,7 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 	{
 		if (PlayerController->IsInputKeyDown(EKeys::RightMouseButton))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("RIGHT CLICk"));
 			if (!display_wheel)
 			{
 				ShowColorWheel();
@@ -320,15 +321,6 @@ void AGameOffDevCharacter::ShowColorImage(const FString& ImageName)
 
 void AGameOffDevCharacter::ShowColorWheel()
 {
-	if (!ColorWheelWidget)
-	{
-		return;
-	}
-
-	if (!IsValid(ColorWheelWidget))
-	{
-		return;
-	}
 
 	if (ColorWheelWidget->Visibility != ESlateVisibility::Visible)
 	{
@@ -354,12 +346,6 @@ void AGameOffDevCharacter::HideColorWheel()
 	{
 		ColorWheelWidget->SetVisibility(ESlateVisibility::Collapsed);
 		display_wheel = false;
-
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		if (PlayerController)
-		{
-			PlayerController->bShowMouseCursor = false;
-		}
 	}
 }
 
@@ -412,14 +398,17 @@ void AGameOffDevCharacter::BeginPlay()
 
 void AGameOffDevCharacter::UpdateBatteryUI()
 {
-	if (BatteryWidgetInstance)
+	if (CurrentLampeTorche != nullptr)
 	{
-		UProgressBar* BatteryProgressBar = Cast<UProgressBar>(BatteryWidgetInstance->GetWidgetFromName("BatteryBar"));
-		if (BatteryProgressBar)
+		if (BatteryWidgetInstance != nullptr)
 		{
-			if (CurrentLampeTorche != nullptr)
+			UProgressBar* BatteryProgressBar = Cast<UProgressBar>(BatteryWidgetInstance->GetWidgetFromName("BatteryBar"));
+			if (BatteryProgressBar)
 			{
-				BatteryProgressBar->SetPercent(FMath::Clamp(CurrentLampeTorche->BatteryLevel / 100.0f, 0.0f, 1.0f));
+				if (CurrentLampeTorche != nullptr)
+				{
+					BatteryProgressBar->SetPercent(FMath::Clamp(CurrentLampeTorche->BatteryLevel / 100.0f, 0.0f, 1.0f));
+				}
 			}
 		}
 	}
@@ -439,8 +428,6 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-
-		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::ShowColorWheel);
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
 
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
@@ -483,6 +470,7 @@ bool AGameOffDevCharacter::CanJumpBasedOnBox()
 	FVector PlayerLocation = GetActorLocation();
 	FVector ForwardVector = GetActorForwardVector();
 	FVector SphereCenter = PlayerLocation + ForwardVector * 30.0f;
+	SphereCenter.Z -= 70.0f;
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
@@ -542,98 +530,106 @@ void AGameOffDevCharacter::UpdateInfoBox()
 {
 	FVector MouseWorldLocation = GetMouseWorldLocation();
 	FVector PlayerLocation = GetActorLocation();
-	UTextBlock* InfoBox = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("InfoBox"));
-
-	if (MouseWorldLocation != FVector::ZeroVector)
+	if (BatteryWidgetInstance != nullptr)
 	{
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
+		UTextBlock* InfoBox = Cast<UTextBlock>(BatteryWidgetInstance->GetWidgetFromName("InfoBox"));
 
-		TArray<FHitResult> HitResults;
-		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
-		if  (InfoBox != nullptr)
+		if (!InfoBox)
 		{
-			InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+			return;
 		}
-		if (bHit)
+		if (MouseWorldLocation != FVector::ZeroVector)
 		{
-			for (FHitResult& Hit : HitResults)
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(this);
+
+			TArray<FHitResult> HitResults;
+			bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
+			if  (InfoBox != nullptr)
 			{
-				AActor* HitActor = Hit.GetActor();
-				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
-				if (HitActor && Distance <= 100)
+				InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+				InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+			}
+			if (bHit)
+			{
+				for (FHitResult& Hit : HitResults)
 				{
-					if (HitActor->IsA(DoorClass))
+					AActor* HitActor = Hit.GetActor();
+					float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
+					if (HitActor && Distance <= 100)
 					{
-						FText DisplayText;
-						FName VariableName(TEXT("DisplayText"));
-
-						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
-						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						if (HitActor->IsA(DoorClass))
 						{
-							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
-							if (TextProperty)
+							FText DisplayText;
+							FName VariableName(TEXT("DisplayText"));
+
+							FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+							if (Property && Property->IsA(FTextProperty::StaticClass()))
 							{
-								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
-								InfoBox->SetText(DisplayText);
+								FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+								if (TextProperty)
+								{
+									DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+									InfoBox->SetText(DisplayText);
+								}
 							}
 						}
-					}
-					if (HitActor->IsA(KeyClass))
-					{
-						FText DisplayText;
-						FName VariableName(TEXT("DisplayText"));
-
-						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
-						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						if (HitActor->IsA(KeyClass))
 						{
-							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
-							if (TextProperty)
+							FText DisplayText;
+							FName VariableName(TEXT("DisplayText"));
+
+							FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+							if (Property && Property->IsA(FTextProperty::StaticClass()))
 							{
-								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
-								InfoBox->SetText(DisplayText);
+								FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+								if (TextProperty)
+								{
+									DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+									InfoBox->SetText(DisplayText);
+								}
 							}
 						}
-					}
-					if (HitActor->IsA(PaperClass))
-					{
-						FText DisplayText;
-						FName VariableName(TEXT("DisplayText"));
-
-						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
-						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						if (HitActor->IsA(PaperClass))
 						{
-							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
-							if (TextProperty)
+							FText DisplayText;
+							FName VariableName(TEXT("DisplayText"));
+
+							FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+							if (Property && Property->IsA(FTextProperty::StaticClass()))
 							{
-								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
-								InfoBox->SetText(DisplayText);
+								FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+								if (TextProperty)
+								{
+									DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+									InfoBox->SetText(DisplayText);
+								}
 							}
 						}
-					}
-					if (HitActor->IsA(CurtainClass))
-					{
-						FText DisplayText;
-						FName VariableName(TEXT("DisplayText"));
-
-						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
-						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						if (HitActor->IsA(CurtainClass))
 						{
-							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
-							if (TextProperty)
+							FText DisplayText;
+							FName VariableName(TEXT("DisplayText"));
+
+							FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+							if (Property && Property->IsA(FTextProperty::StaticClass()))
 							{
-								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
-								InfoBox->SetText(DisplayText);
+								FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+								if (TextProperty)
+								{
+									DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+									InfoBox->SetText(DisplayText);
+								}
 							}
 						}
-					}
-					if (HitActor->IsA(AColorFilter::StaticClass()))
-					{
-						AColorFilter* ColorFilterActor = Cast<AColorFilter>(HitActor);
-						if (ColorFilterActor)
+						if (HitActor->IsA(AColorFilter::StaticClass()))
 						{
-							FText DisplayText = ColorFilterActor->GetDisplayText();
-							InfoBox->SetText(DisplayText);
+							AColorFilter* ColorFilterActor = Cast<AColorFilter>(HitActor);
+							if (ColorFilterActor)
+							{
+								FText DisplayText = ColorFilterActor->GetDisplayText();
+								InfoBox->SetText(DisplayText);
+							}
 						}
 					}
 				}
@@ -646,7 +642,30 @@ void AGameOffDevCharacter::Interact()
 {
 	FVector MouseWorldLocation = GetMouseWorldLocation();
 	FVector PlayerLocation = GetActorLocation();
+	FVector ForwardVector = GetActorForwardVector();
 
+	FVector BoxSphereCenter = PlayerLocation + ForwardVector * 30.0f;  // Position devant le joueur
+	BoxSphereCenter.Z -= 50.0f;
+	FCollisionQueryParams BoxParams;
+	BoxParams.AddIgnoredActor(this);
+	TArray<FHitResult> BoxHitResults;
+
+	bool bBoxHit = GetWorld()->SweepMultiByChannel(BoxHitResults, BoxSphereCenter, BoxSphereCenter, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(50.0f), BoxParams);
+
+	//DrawDebugSphere(GetWorld(), BoxSphereCenter, 50.0f, 12, FColor::Green, false, 2.0f);
+
+	if (bBoxHit)
+	{
+		for (FHitResult& BoxHit : BoxHitResults)
+		{
+			AActor* BoxHitActor = BoxHit.GetActor();
+			if (BoxHitActor && BoxHitActor->IsA(APoussableBox::StaticClass()) && !bIsPushingOrPulling)
+			{
+				BeginPushOrPull();
+				break;
+			}
+		}
+	}
 	if (MouseWorldLocation != FVector::ZeroVector)
 	{
 		FCollisionQueryParams Params;
@@ -696,10 +715,6 @@ void AGameOffDevCharacter::Interact()
 							CurrentLampeTorche->PicktupColor(FilterValue);
 						Filter->Destroy();
 					}
-				}
-				if (HitActor->IsA(APoussableBox::StaticClass()) && Distance <= 100)
-				{
-					BeginPushOrPull();
 				}
 			}
 		}
@@ -1009,6 +1024,8 @@ void AGameOffDevCharacter::SavePlayerData()
 		GameInstance->CurrentSave->InitBatteryLevel = CurrentLampeTorche->InitBatteryLevel;
 		GameInstance->CurrentSave->InitialIntensity = CurrentLampeTorche->InitialIntensity;
 		GameInstance->CurrentSave->InitialAttenuationRadius = CurrentLampeTorche->InitialAttenuationRadius;
+
+		GameInstance->CurrentSave->InnerConeAngle = CurrentLampeTorche->LampSpotLight->InnerConeAngle;
 		if (GameInstance->CurrentSave->CanEscape == false)
 			GameInstance->CurrentSave->CanEscape = CanEscape;
 		GameInstance->SaveGameData();
@@ -1058,6 +1075,7 @@ void AGameOffDevCharacter::LoadPlayerData()
 		CurrentLampeTorche->InitBatteryLevel = 100;
 		CurrentLampeTorche->InitialIntensity = 400000;
 		CanEscape = GameInstance->CurrentSave->CanEscape;
+		CurrentLampeTorche->LampSpotLight->InnerConeAngle = GameInstance->CurrentSave->InnerConeAngle;
 		CurrentLampeTorche->InitialAttenuationRadius = GameInstance->CurrentSave->InitialAttenuationRadius;
 	}
 

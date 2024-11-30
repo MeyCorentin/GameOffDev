@@ -5,7 +5,6 @@
 void APoussableBox::BeginPlay()
 {
     Super::BeginPlay();
-
 }
 
 APoussableBox::APoussableBox()

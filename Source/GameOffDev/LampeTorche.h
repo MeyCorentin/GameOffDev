@@ -42,7 +42,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp Color")
     int DefaultColor;
 
-
     float InitBatteryLevel;
   
     float InitialIntensity;
@@ -60,7 +59,7 @@ public:
 
     void PicktupColor(int32 FilterValue);
 
-    TArray<bool> _ColorFilter = { false, false, false, false };
+    TArray<bool> _ColorFilter = { false, false, false, false, false };
 
 };
 

@@ -66,6 +66,9 @@ void ALampeTorche::BeginPlay()
         case 3:
             LampColor = FLinearColor(0.0f, 1.0f, 0.0f);
             break;
+        case 4:
+            LampColor = FLinearColor(1.0f, 1.0f, 1.0f);
+            break;
         default:
             LampColor = FLinearColor(1.0f, 1.0f, 1.0f);
             break;
@@ -142,6 +145,10 @@ void ALampeTorche::PicktupColor(int32 FilterValue)
     if (FilterValue >= 0 && FilterValue < _ColorFilter.Num())
     {
         _ColorFilter[FilterValue] = true;
+        if (DefaultColor == 4)
+        {
+            ChangeColor(_ColorFilter[FilterValue]);
+        }
     }
 }
 

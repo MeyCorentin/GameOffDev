@@ -14,9 +14,7 @@ AChargingLight::AChargingLight()
     LightBulbe = CreateDefaultSubobject<UPointLightComponent>(TEXT("LightBulbe"));
     LightBulbe->SetIntensity(0.0f);
     LightBulbe->AttenuationRadius = 0;
-    RootComponent = LightBulbe;
-    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-    MeshComponent->SetupAttachment(RootComponent);
+    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));;
 
 }
 
@@ -46,7 +44,6 @@ void AChargingLight::BeginPlay()
                 1.0f,
                 true
             );
-            UE_LOG(LogTemp, Warning, TEXT("Timer !"));
         }
     }
 	
@@ -55,8 +52,11 @@ void AChargingLight::BeginPlay()
 void AChargingLight::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
     if (isIlluminatedBySpotLight())
     {
+        UE_LOG(LogTemp, Warning, TEXT("LIGHT! IntensityInit: %f, AttenuationRadiusInit: %f"), LightIntensityInit, AttenuationRadiusInit);
+
         LightBulbe->SetIntensity(LightIntensityInit);
         LightBulbe->AttenuationRadius = AttenuationRadiusInit;
     }
@@ -87,7 +87,7 @@ bool AChargingLight::isIlluminatedBySpotLight()
         FVector LightLocation = SpotLightComponent->GetComponentLocation();
         float Length = SpotLightComponent->AttenuationRadius;
         float ConeAngle = SpotLightComponent->InnerConeAngle;
-        //DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
+        DrawDebugCone(GetWorld(), LightLocation, LightDirection, Length, FMath::DegreesToRadians(ConeAngle), FMath::DegreesToRadians(ConeAngle), 12, FColor::Yellow, false, 0.1f);
         isIlluminated = IsMeshInCone(this, Length, ConeAngle, LightDirection, LightLocation);
 
         if (isIlluminated)
