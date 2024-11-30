@@ -156,6 +156,7 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 		}
 
 		LampeTorche->SetActorEnableCollision(false);
+		BatteryWidgetInstance->AddToViewport();
 	}
 }
 
@@ -347,10 +348,6 @@ void AGameOffDevCharacter::BeginPlay()
 	if (BatteryWidgetClass)
 	{
 		BatteryWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), BatteryWidgetClass);
-		if (BatteryWidgetInstance)
-		{
-			BatteryWidgetInstance->AddToViewport();
-		}
 	}
 	if (ColorWheelWidgetClass)
 	{
