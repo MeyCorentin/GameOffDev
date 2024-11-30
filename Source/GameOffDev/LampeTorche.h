@@ -18,10 +18,6 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    float InitBatteryLevel;
-    float InitialIntensity;
-    float InitialAttenuationRadius;
-
 public:
     virtual void Tick(float DeltaTime) override;
 
@@ -45,6 +41,13 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Lamp Color")
     int DefaultColor;
+
+
+    float InitBatteryLevel;
+  
+    float InitialIntensity;
+
+    float InitialAttenuationRadius;
 
     void ChangeColor(int32 ColorCode);
 
