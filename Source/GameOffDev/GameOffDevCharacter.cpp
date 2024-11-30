@@ -287,7 +287,6 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 		{
 			if (display_wheel) 
 			{
-				UE_LOG(LogTemp, Warning, TEXT("!HIDE"));
 				HideColorWheel();
 			}
 		}
@@ -445,8 +444,6 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
 
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
-		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
-		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
 		if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 		{
 			if (UEnhancedInputComponent* EnhancedInputComponentColor = Cast<UEnhancedInputComponent>(PlayerController->InputComponent))
@@ -468,6 +465,7 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(DebugAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::ChangeDebugMode);
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::DropObject);
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Interact);
+		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
 	}
 }
 
@@ -526,8 +524,6 @@ void AGameOffDevCharacter::EnableGameplayInputs()
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::Look);
-		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::BeginPushOrPull);
-		EnhancedInputComponent->BindAction(PushOrPullAction, ETriggerEvent::Completed, this, &AGameOffDevCharacter::EndPushOrPull);
 	}
 }
 
@@ -668,6 +664,10 @@ void AGameOffDevCharacter::Interact()
 							CurrentLampeTorche->PicktupColor(FilterValue);
 						Filter->Destroy();
 					}
+				}
+				if (HitActor->IsA(APoussableBox::StaticClass()) && Distance <= 100)
+				{
+					BeginPushOrPull();
 				}
 			}
 		}
@@ -836,7 +836,7 @@ void AGameOffDevCharacter::Move(const FInputActionValue& Value)
 				AddMovementInput(RightDirection, MovementVector.Y);
 
 			}
-			if (bIsPushingOrPulling && TargetBox != nullptr && (MovementVector.Size() > 0) && CheckForPushableBox())
+			if (bIsPushingOrPulling && TargetBox != nullptr && (MovementVector.Size() > 0))
 			{
 				AddMovementInput(ForwardDirection, -MovementVector.X / 8);
 				AddMovementInput(RightDirection, MovementVector.Y / 8);
@@ -877,28 +877,6 @@ void AGameOffDevCharacter::EndPushOrPull()
 	}
 }
 
-bool AGameOffDevCharacter::CheckForPushableBox()
-{
-	FVector Start = GetActorLocation();
-
-	FVector ForwardVector = GetActorForwardVector();
-	FRotator NewRotation = FRotator(0.f, 90.f, 0.f);
-	ForwardVector = NewRotation.RotateVector(ForwardVector);
-	FVector End = Start + ForwardVector * 50.0f;
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-
-	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
-
-	if (bHit)
-	{
-		APoussableBox* DetectedBox = Cast<APoussableBox>(HitResult.GetActor());
-		if (DetectedBox)
-			return true;
-	}
-	return false;
-}
 void AGameOffDevCharacter::BeginPushOrPull()
 {
 	FVector Start = GetActorLocation();
