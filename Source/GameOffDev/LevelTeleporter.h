@@ -24,8 +24,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level")
     FName LevelToLoad;
 
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level")
+    bool NeedPaper = false;
+
     UFUNCTION(BlueprintCallable, Category = "Level")
     bool CheckCollisionWithPlayer();
+
 
 private:
     UFUNCTION()

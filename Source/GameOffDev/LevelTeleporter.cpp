@@ -59,22 +59,49 @@ void ALevelTeleporter::LoadLevel(UPrimitiveComponent* OverlappedComponent, AActo
     APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
     if (PlayerController)
     {
-        PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
+        if (NeedPaper == false)
+        {
+            PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
 
-        TWeakObjectPtr<ALevelTeleporter> WeakThis(this);
+            TWeakObjectPtr<ALevelTeleporter> WeakThis(this);
 
-        FTimerHandle TimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis, this]()
-            {
-                if (WeakThis.IsValid())
+            FTimerHandle TimerHandle;
+            GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis, this]()
                 {
-                    AGameOffDevCharacter* PlayerChar = Cast<AGameOffDevCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
-                    if (PlayerChar)
+                    if (WeakThis.IsValid())
                     {
-                        PlayerChar->SavePlayerData();
+                        AGameOffDevCharacter* PlayerChar = Cast<AGameOffDevCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+                        if (PlayerChar)
+                        {
+                            PlayerChar->SavePlayerData();
+                        }
+                        UGameplayStatics::OpenLevel(WeakThis.Get(), WeakThis->LevelToLoad);
                     }
-                    UGameplayStatics::OpenLevel(WeakThis.Get(), WeakThis->LevelToLoad);
-                }
-            }, 1.0f, false);
+                }, 1.0f, false);
+        }
+        else {
+            AGameOffDevCharacter* PlayerChar = Cast<AGameOffDevCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+
+            if (PlayerChar->CanEscape == true)
+            {
+                PlayerController->PlayerCameraManager->StartCameraFade(0.f, 1.f, 1.0f, FLinearColor::Black, false, true);
+
+                TWeakObjectPtr<ALevelTeleporter> WeakThis(this);
+
+                FTimerHandle TimerHandle;
+                GetWorld()->GetTimerManager().SetTimer(TimerHandle, [WeakThis, this]()
+                    {
+                        if (WeakThis.IsValid())
+                        {
+                            AGameOffDevCharacter* PlayerChar = Cast<AGameOffDevCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+                            if (PlayerChar)
+                            {
+                                PlayerChar->SavePlayerData();
+                            }
+                            UGameplayStatics::OpenLevel(WeakThis.Get(), WeakThis->LevelToLoad);
+                        }
+                    }, 1.0f, false);
+            }
+        }
     }
 }

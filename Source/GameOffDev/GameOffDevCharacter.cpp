@@ -675,6 +675,7 @@ void AGameOffDevCharacter::Interact()
 				}
 				if (HitActor->IsA(PaperClass) && Distance <= 100 && !bIsPushingOrPulling)
 				{
+					CanEscape = true;
 					HitActor->Destroy();
 				}
 				if (HitActor->IsA(CurtainClass) && Distance <= 100 && !bIsPushingOrPulling)
