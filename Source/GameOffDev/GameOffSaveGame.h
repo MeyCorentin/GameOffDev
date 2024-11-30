@@ -30,4 +30,25 @@ class GAMEOFFDEV_API UGameOffSaveGame : public USaveGame
 
         UPROPERTY(BlueprintReadWrite, Category = "SaveData")
         FLinearColor LightColor;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float BatteryLevel;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float BatteryDrainRate;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float LightRadiusFactor;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float LightIntensityFactor;
+        
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float InitBatteryLevel;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float InitialIntensity;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        float InitialAttenuationRadius;
 };

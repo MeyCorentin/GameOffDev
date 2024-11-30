@@ -156,6 +156,7 @@ void AGameOffDevCharacter::PickupLampeTorche(ALampeTorche* LampeTorche)
 		}
 
 		LampeTorche->SetActorEnableCollision(false);
+		BatteryWidgetInstance->AddToViewport();
 	}
 }
 
@@ -347,10 +348,6 @@ void AGameOffDevCharacter::BeginPlay()
 	if (BatteryWidgetClass)
 	{
 		BatteryWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), BatteryWidgetClass);
-		if (BatteryWidgetInstance)
-		{
-			BatteryWidgetInstance->AddToViewport();
-		}
 	}
 	if (ColorWheelWidgetClass)
 	{
@@ -933,6 +930,14 @@ void AGameOffDevCharacter::SavePlayerData()
 		GameInstance->CurrentSave->PreviousLevelName = UGameplayStatics::GetCurrentLevelName(this);
 		GameInstance->CurrentSave->DefaultColor = CurrentLampeTorche->DefaultColor;
 		GameInstance->CurrentSave->LightColor = CurrentLampeTorche->LampSpotLight->GetLightColor();
+		GameInstance->CurrentSave->BatteryLevel = CurrentLampeTorche->BatteryLevel;
+		GameInstance->CurrentSave->BatteryDrainRate = CurrentLampeTorche->BatteryDrainRate;
+		GameInstance->CurrentSave->LightRadiusFactor = CurrentLampeTorche->LightRadiusFactor;
+		GameInstance->CurrentSave->LightIntensityFactor = CurrentLampeTorche->LightIntensityFactor;
+		GameInstance->CurrentSave->InitBatteryLevel = CurrentLampeTorche->InitBatteryLevel;
+		GameInstance->CurrentSave->InitialIntensity = CurrentLampeTorche->InitialIntensity;
+		GameInstance->CurrentSave->InitialAttenuationRadius = CurrentLampeTorche->InitialAttenuationRadius;
+
 		GameInstance->SaveGameData();
 	}
 }
@@ -973,6 +978,13 @@ void AGameOffDevCharacter::LoadPlayerData()
 		CurrentLampeTorche->DefaultColor = GameInstance->CurrentSave->DefaultColor;
 		CurrentLampeTorche->_ColorFilter = GameInstance->CurrentSave->FilterInventory;
 		CurrentLampeTorche->LampSpotLight->SetLightColor(GameInstance->CurrentSave->LightColor);
+		CurrentLampeTorche->BatteryLevel = GameInstance->CurrentSave->BatteryLevel;
+		CurrentLampeTorche->BatteryDrainRate = GameInstance->CurrentSave->BatteryDrainRate;
+		CurrentLampeTorche->LightRadiusFactor = GameInstance->CurrentSave->LightRadiusFactor;
+		CurrentLampeTorche->LightIntensityFactor = GameInstance->CurrentSave->LightIntensityFactor;
+		CurrentLampeTorche->InitBatteryLevel = GameInstance->CurrentSave->InitBatteryLevel;
+		CurrentLampeTorche->InitialIntensity = GameInstance->CurrentSave->InitialIntensity;
+		CurrentLampeTorche->InitialAttenuationRadius = GameInstance->CurrentSave->InitialAttenuationRadius;
 	}
 
 }
