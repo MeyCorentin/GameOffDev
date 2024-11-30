@@ -53,7 +53,7 @@ void AGameOffDevCharacter::TraceToMouseCursor()
 		Start = GetActorLocation();
 		Direction = (TargetLocation - Start).GetSafeNormal();
 		End = Start + Direction * 1000.f;
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, -1.0f, 0, 1.0f);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, -1.0f, 0, 1.0f);
 
 	}
 }
@@ -483,8 +483,10 @@ void AGameOffDevCharacter::UpdateInfoBox()
 
 		TArray<FHitResult> HitResults;
 		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
-
-		InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+		if  (InfoBox != nullptr)
+		{
+			InfoBox->SetText(FText::FromString(FString::Printf(TEXT(""))));
+		}
 		if (bHit)
 		{
 			for (FHitResult& Hit : HitResults)
@@ -666,7 +668,6 @@ void AGameOffDevCharacter::UpdateKeyRing()
 			TArray<UStaticMeshComponent*> StaticMeshComponents;
 			KeyRing->GetComponents<UStaticMeshComponent>(StaticMeshComponents);
 
-			UE_LOG(LogTemp, Warning, TEXT("KEY NUMBER : %i"), key_number);
 			for (UStaticMeshComponent* MeshComponent : StaticMeshComponents)
 			{
 				MeshComponent->SetVisibility(false);
@@ -982,8 +983,8 @@ void AGameOffDevCharacter::LoadPlayerData()
 		CurrentLampeTorche->BatteryDrainRate = GameInstance->CurrentSave->BatteryDrainRate;
 		CurrentLampeTorche->LightRadiusFactor = GameInstance->CurrentSave->LightRadiusFactor;
 		CurrentLampeTorche->LightIntensityFactor = GameInstance->CurrentSave->LightIntensityFactor;
-		CurrentLampeTorche->InitBatteryLevel = GameInstance->CurrentSave->InitBatteryLevel;
-		CurrentLampeTorche->InitialIntensity = GameInstance->CurrentSave->InitialIntensity;
+		CurrentLampeTorche->InitBatteryLevel = 100;
+		CurrentLampeTorche->InitialIntensity = 400000;
 		CurrentLampeTorche->InitialAttenuationRadius = GameInstance->CurrentSave->InitialAttenuationRadius;
 	}
 
