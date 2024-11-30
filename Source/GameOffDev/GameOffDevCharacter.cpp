@@ -477,31 +477,42 @@ void AGameOffDevCharacter::Jump()
 	}
 }
 
+
 bool AGameOffDevCharacter::CanJumpBasedOnBox()
 {
-	FVector MouseWorldLocation = GetMouseWorldLocation();
 	FVector PlayerLocation = GetActorLocation();
+	FVector ForwardVector = GetActorForwardVector();
+	FVector SphereCenter = PlayerLocation + ForwardVector * 30.0f;
 
-	if (MouseWorldLocation != FVector::ZeroVector)
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	TArray<FHitResult> HitResults;
+
+	bool bHit = GetWorld()->SweepMultiByChannel(
+		HitResults,
+		SphereCenter,
+		SphereCenter,
+		FQuat::Identity,
+		ECC_Visibility,
+		FCollisionShape::MakeSphere(50.0f),
+		Params
+	);
+
+	if (bHit)
 	{
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
-		TArray<FHitResult> HitResults;
-		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
-
-		if (bHit)
+		for (FHitResult& Hit : HitResults)
 		{
-			for (FHitResult& Hit : HitResults)
+			AActor* HitActor = Hit.GetActor();
+			if (HitActor && HitActor->IsA(APoussableBox::StaticClass()) && !bIsPushingOrPulling)
 			{
-				AActor* HitActor = Hit.GetActor();
-				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
-				if (HitActor && HitActor->IsA(APoussableBox::StaticClass()) && Distance <= 100 && !bIsPushingOrPulling)
-				{
-					return true;
-				}
+				//DrawDebugSphere(GetWorld(), SphereCenter, 50.0f, 12, FColor::Green, false, 2.0f);  // Affiche un cercle vert
+
+				return true;
 			}
 		}
 	}
+
 	return false;
 }
 
