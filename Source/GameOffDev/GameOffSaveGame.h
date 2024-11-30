@@ -51,4 +51,9 @@ class GAMEOFFDEV_API UGameOffSaveGame : public USaveGame
 
         UPROPERTY(BlueprintReadWrite, Category = "SaveData")
         float InitialAttenuationRadius;
+
+        UPROPERTY(BlueprintReadWrite, Category = "SaveData")
+        bool CanEscape;
+
+
 };

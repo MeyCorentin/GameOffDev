@@ -595,6 +595,22 @@ void AGameOffDevCharacter::UpdateInfoBox()
 							}
 						}
 					}
+					if (HitActor->IsA(PaperClass))
+					{
+						FText DisplayText;
+						FName VariableName(TEXT("DisplayText"));
+
+						FProperty* Property = HitActor->GetClass()->FindPropertyByName(VariableName);
+						if (Property && Property->IsA(FTextProperty::StaticClass()))
+						{
+							FTextProperty* TextProperty = CastField<FTextProperty>(Property);
+							if (TextProperty)
+							{
+								DisplayText = TextProperty->GetPropertyValue_InContainer(HitActor);
+								InfoBox->SetText(DisplayText);
+							}
+						}
+					}
 					if (HitActor->IsA(CurtainClass))
 					{
 						FText DisplayText;
@@ -654,6 +670,10 @@ void AGameOffDevCharacter::Interact()
 					break;
 				}
 				if (HitActor->IsA(KeyClass) && Distance <= 100 && !bIsPushingOrPulling)
+				{
+					HitActor->Destroy();
+				}
+				if (HitActor->IsA(PaperClass) && Distance <= 100 && !bIsPushingOrPulling)
 				{
 					HitActor->Destroy();
 				}
@@ -988,7 +1008,8 @@ void AGameOffDevCharacter::SavePlayerData()
 		GameInstance->CurrentSave->InitBatteryLevel = CurrentLampeTorche->InitBatteryLevel;
 		GameInstance->CurrentSave->InitialIntensity = CurrentLampeTorche->InitialIntensity;
 		GameInstance->CurrentSave->InitialAttenuationRadius = CurrentLampeTorche->InitialAttenuationRadius;
-
+		if (GameInstance->CurrentSave->CanEscape == false)
+			GameInstance->CurrentSave->CanEscape = CanEscape;
 		GameInstance->SaveGameData();
 	}
 }
@@ -1035,6 +1056,7 @@ void AGameOffDevCharacter::LoadPlayerData()
 		CurrentLampeTorche->LightIntensityFactor = GameInstance->CurrentSave->LightIntensityFactor;
 		CurrentLampeTorche->InitBatteryLevel = 100;
 		CurrentLampeTorche->InitialIntensity = 400000;
+		CanEscape = GameInstance->CurrentSave->CanEscape;
 		CurrentLampeTorche->InitialAttenuationRadius = GameInstance->CurrentSave->InitialAttenuationRadius;
 	}
 

@@ -93,6 +93,8 @@ public:
 
 	bool bIsPushingOrPulling = false;
 
+	bool CanEscape = false;
+
 	UUserWidget* BatteryWidgetInstance;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -119,6 +121,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void SwitchColor(int32 ColorCode);
+
 	void SwitchColorWithArgs(const FInputActionValue& Value, const bool bEnable, const int ColorIndex);
 
 
@@ -182,6 +185,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
 	TSubclassOf<AActor> CurtainClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact")
+	TSubclassOf<AActor> PaperClass;
 
 };
 
