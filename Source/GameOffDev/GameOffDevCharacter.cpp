@@ -414,7 +414,7 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		EnhancedInputComponent->BindAction(WheelAction, ETriggerEvent::Triggered, this, &AGameOffDevCharacter::ShowColorWheel);
@@ -446,6 +446,43 @@ void AGameOffDevCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction(InteractionAction, ETriggerEvent::Started, this, &AGameOffDevCharacter::Interact);
 	}
 }
+
+void AGameOffDevCharacter::Jump()
+{
+	if (CanJumpBasedOnBox())
+	{
+		Super::Jump();
+	}
+}
+
+bool AGameOffDevCharacter::CanJumpBasedOnBox()
+{
+	FVector MouseWorldLocation = GetMouseWorldLocation();
+	FVector PlayerLocation = GetActorLocation();
+
+	if (MouseWorldLocation != FVector::ZeroVector)
+	{
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+		TArray<FHitResult> HitResults;
+		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
+
+		if (bHit)
+		{
+			for (FHitResult& Hit : HitResults)
+			{
+				AActor* HitActor = Hit.GetActor();
+				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
+				if (HitActor && HitActor->IsA(APoussableBox::StaticClass()) && Distance <= 100 && !bIsPushingOrPulling)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 
 void AGameOffDevCharacter::DisableGameplayInputs()
 {

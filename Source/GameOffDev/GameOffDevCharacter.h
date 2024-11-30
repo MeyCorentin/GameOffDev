@@ -163,6 +163,9 @@ protected:
 
 	void FaceCameraToCharacter();
 
+	bool CanJumpBasedOnBox();
+
+	void Jump();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* AzertyMappingContext;
 
