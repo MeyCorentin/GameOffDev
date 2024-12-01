@@ -78,6 +78,6 @@ void AGameOffDevGameMode::CheckLightsAndReturnToTitle()
     if (!bLightFound)
     {
         UE_LOG(LogTemp, Warning, TEXT("No valid lights found! Returning to title screen..."));
-        UGameplayStatics::OpenLevel(World, FName("MainMenuMap"));
+        UGameplayStatics::OpenLevel(World, FName("MainMenuMap_loose"));
     }
 }
