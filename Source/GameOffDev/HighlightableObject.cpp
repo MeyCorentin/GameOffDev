@@ -254,7 +254,7 @@ bool AHighlightableObject::CheckCollisionWithPlayer(UStaticMeshComponent* MeshCo
         {
             float DistanceToPlayer = FVector::Dist(Vertex, PlayerLocation);
 
-            if (DistanceToPlayer <= 120.f)
+            if (DistanceToPlayer <= 50.f)
             {
                 return true;
             }
