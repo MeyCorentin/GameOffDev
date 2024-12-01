@@ -673,14 +673,30 @@ void AGameOffDevCharacter::Interact()
 	}
 	if (MouseWorldLocation != FVector::ZeroVector)
 	{
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
-		TArray<FHitResult> HitResults;
-		bool bHit = GetWorld()->SweepMultiByChannel(HitResults, MouseWorldLocation, MouseWorldLocation, FQuat::Identity, ECC_Visibility, FCollisionShape::MakeSphere(10.f), Params);
+		FVector DirectionToMouse = (MouseWorldLocation - PlayerLocation).GetSafeNormal();
+		FVector SphereCenter = PlayerLocation + DirectionToMouse * 100.0f;
 
-		if (bHit)
+		FCollisionQueryParams SphereParams;
+		SphereParams.AddIgnoredActor(this);
+		TArray<FHitResult> SphereHitResults;
+
+		float SphereRadius = 50.0f;
+
+		bool bSphereHit = GetWorld()->SweepMultiByChannel(
+			SphereHitResults,
+			SphereCenter,
+			SphereCenter,
+			FQuat::Identity,
+			ECC_Visibility,
+			FCollisionShape::MakeSphere(SphereRadius),
+			SphereParams
+		);
+
+		//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Green, false, 2.0f);
+
+		if (bSphereHit)
 		{
-			for (FHitResult& Hit : HitResults)
+			for (FHitResult& Hit : SphereHitResults)
 			{
 				AActor* HitActor = Hit.GetActor();
 				float Distance = FVector::Dist(PlayerLocation, MouseWorldLocation);
