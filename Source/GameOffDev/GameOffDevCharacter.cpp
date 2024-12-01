@@ -282,6 +282,10 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 					SwitchColor(3);
 					ShowColorImage("C3");
 				}
+				else if (CurrentLampeTorche->DefaultColor == 4)
+				{
+					ShowColorImage("C5");
+				}
 			}
 		}
 		else
