@@ -964,8 +964,6 @@ void AGameOffDevCharacter::BeginPushOrPull()
 
 	if (bHit)
 	{
-		if (bIsDebugModeEnabled)
-			DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
 
 		TargetBox = Cast<APoussableBox>(HitResult.GetActor());
 		if (TargetBox != nullptr)
@@ -976,11 +974,6 @@ void AGameOffDevCharacter::BeginPushOrPull()
 				CurrentLampeTorche->LampSpotLight->SetVisibility(false);
 			}
 		}
-	}
-	else
-	{
-		if (bIsDebugModeEnabled)
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
 	}
 }
 
