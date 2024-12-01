@@ -390,6 +390,7 @@ void AGameOffDevCharacter::BeginPlay()
 		if (!CurrentLevelName.Equals(TEXT("Level1"), ESearchCase::IgnoreCase))
 		{
 			ALampeTorche* NewLampeTorche = GetWorld()->SpawnActor<ALampeTorche>(ALampeTorche::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+			NewLampeTorche->DefaultColor = 0;
 			PickupLampeTorche(NewLampeTorche);
 		}
 	}
