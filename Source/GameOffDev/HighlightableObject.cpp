@@ -118,12 +118,61 @@ bool AHighlightableObject::isIlluminatedByPointLight()
     return isIlluminated;
 }
 
+bool AHighlightableObject::isIlluminatedByPointLightFusion()
+{
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundActors);
+
+    int _r = 0;
+    int _g = 0;
+    int _b = 0;
+    for (AActor* Actor : FoundActors)
+    {
+        UPointLightComponent* PointLightComponent = Actor->FindComponentByClass<UPointLightComponent>();
+        if (!PointLightComponent || Actor->IsA(ASpotLight::StaticClass()) || Actor->IsA(ALampeTorche::StaticClass()))
+        {
+            continue;
+        }
+
+
+        FVector LightLocation = PointLightComponent->GetComponentLocation();
+        float Radius = PointLightComponent->AttenuationRadius;
+        TArray<FVector> Vertices = GetVertices();
+
+        for (const FVector& Vertex : Vertices)
+        {
+            FVector WorldVertex0 = this->GetTransform().TransformPosition(Vertex);
+            if (TargetActor != nullptr)
+            {
+                WorldVertex0 = TargetActor->GetTransform().TransformPosition(Vertex);
+            }
+
+            float distance = FVector::Dist(LightLocation, WorldVertex0);
+            if (distance <= Radius)
+            {
+                // Addition sécurisée avec type plus large
+                _r += PointLightComponent->LightColor.R;
+                _g += PointLightComponent->LightColor.G;
+                _b += PointLightComponent->LightColor.B;
+            }
+        }
+    }
+
+    return (_r == _rf && _g == _gf && _b == _bf);
+}
 
 
 bool AHighlightableObject::isIlluminated()
 {
-    bool bIlluminatedBySpotLight = isIlluminatedBySpotLight();
-    bool bIlluminatedByPointLight = isIlluminatedByPointLight();
+    bool bIlluminatedByPointLight;
+    bool bIlluminatedBySpotLight = false;
+    if (Fusion)
+        bIlluminatedByPointLight = isIlluminatedByPointLightFusion();
+    else
+    {
+        bIlluminatedByPointLight = isIlluminatedByPointLight();
+        bIlluminatedBySpotLight = isIlluminatedBySpotLight();
+    }
     if (bIlluminatedBySpotLight == true || bIlluminatedByPointLight == true)
         return true;
 

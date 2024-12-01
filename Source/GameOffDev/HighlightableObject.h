@@ -33,6 +33,15 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
     AActor* TargetActor;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    bool Fusion;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    int _rf;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    int _gf;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    int _bf;
 
     virtual void Tick(float DeltaTime) override;
 
@@ -41,6 +50,7 @@ protected:
     bool isIlluminated();
     bool isIlluminatedBySpotLight();
     bool isIlluminatedByPointLight();
+    bool isIlluminatedByPointLightFusion();
 
     void HandleObjectStatus();
 
