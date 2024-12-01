@@ -267,17 +267,17 @@ void AGameOffDevCharacter::Tick(float DeltaTime)
 					SwitchColor(0);
 					ShowColorImage("C0");
 				}
-				else if (PlayerController->IsInputKeyDown(EKeys::S) || PlayerController->IsInputKeyDown(EKeys::Down))
+				else if (PlayerController->IsInputKeyDown(EKeys::D) || PlayerController->IsInputKeyDown(EKeys::Down))
 				{
 					SwitchColor(1);
 					ShowColorImage("C1");
 				}
-				if (PlayerController->IsInputKeyDown(EKeys::Q) || PlayerController->IsInputKeyDown(EKeys::Left))
+				if (PlayerController->IsInputKeyDown(EKeys::S) || PlayerController->IsInputKeyDown(EKeys::Left))
 				{
 					SwitchColor(2);
 					ShowColorImage("C2");
 				}
-				else if (PlayerController->IsInputKeyDown(EKeys::D) || PlayerController->IsInputKeyDown(EKeys::Right))
+				else if (PlayerController->IsInputKeyDown(EKeys::Q) || PlayerController->IsInputKeyDown(EKeys::Right))
 				{
 					SwitchColor(3);
 					ShowColorImage("C3");
